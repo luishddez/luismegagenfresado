@@ -1,0 +1,1227 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>MegaGen: secuencias de fresado AnyRidge y AnyOne</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --bg:#F3F5F8; --card:#FFFFFF; --field:#F6F8FA; --ink:#16202A; --muted:#687481; --line:#E1E6EC;
+  --blue:#0B87C9; --cyan:#0AA3E3; --pink:#E8409A; --yellow:#F6B820; --green:#3DBE8B; --no:#E5484D; --ok:#2FAE6E;
+  --grad:linear-gradient(90deg,#E8409A 0%,#0AA3E3 100%);
+  --rainbow:linear-gradient(90deg,#E8409A,#F6B820 35%,#3DBE8B 65%,#0AA3E3);
+  --sans:"Poppins","Segoe UI",system-ui,sans-serif; --mono:"IBM Plex Mono","SFMono-Regular",Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){ --bg:#F3F5F8; --ink:#16202A; } }
+:root[data-theme="dark"]{ --bg:#F3F5F8; --ink:#16202A; }
+*,*::before,*::after{box-sizing:inherit}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px);background:#F3F5F8}
+body{margin:0;min-height:100%;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.5;-webkit-tap-highlight-color:transparent}
+button{font:inherit;color:inherit}
+.wrap{max-width:1220px;margin:0 auto;padding:14px 18px 28px}
+header{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;padding-bottom:12px;position:relative}
+header::after{content:"";position:absolute;left:0;right:0;bottom:0;height:3px;border-radius:2px;background:var(--rainbow)}
+.brand .bt{font-weight:800;font-size:clamp(22px,3vw,28px);letter-spacing:.01em;line-height:1.1}
+.brand .bs{font-weight:700;font-size:12px;letter-spacing:.14em;color:var(--muted);text-transform:uppercase}
+.hdate{font-family:var(--mono);font-size:12.5px;color:var(--muted)}
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:14px 0 16px}
+.tab{border:1px solid var(--line);background:var(--card);padding:10px 16px;border-radius:10px;font-weight:600;cursor:pointer;min-height:46px;color:var(--muted)}
+.tab[aria-selected="true"]{background:var(--blue);border-color:var(--blue);color:#fff;box-shadow:0 4px 14px rgba(11,135,201,.25)}
+:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
+.view{display:grid;gap:16px;align-items:start}
+@media (min-width:900px){.view{grid-template-columns:minmax(0,1fr) 360px}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:0 1px 2px rgba(22,32,42,.04)}
+.ctitle{color:var(--blue);font-weight:700;font-size:17px;margin:0 0 12px}
+.stage{position:relative;display:flex;flex-direction:column;min-width:0}
+.canvas{position:relative;border-radius:10px;overflow:hidden;background:#FAFBFC;border:1px solid var(--line)}
+.stage .canvas>svg{width:100%;height:auto;display:block;max-height:calc(100vh - 300px);min-height:260px}
+@media (max-width:899px){.stage .canvas>svg{max-height:54vh}}
+.hud{position:static;padding:10px 14px 4px;min-height:74px;pointer-events:none}
+.hud .k{font-family:var(--mono);font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.hud .big{font-weight:700;font-size:22px;line-height:1.2;display:inline-block;color:var(--ink)}
+.hud .big.v{color:var(--pink)}
+.hud .big.no{color:var(--no)}
+.hud small{display:block;font-size:13px;color:var(--muted)}
+.bar{margin-top:12px;display:flex;flex-direction:column;gap:12px}
+.ctrls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.btn{border:1px solid var(--blue);border-radius:10px;padding:10px 16px;min-height:46px;font-weight:600;cursor:pointer;background:transparent;color:var(--blue);display:inline-flex;align-items:center;gap:8px}
+.btn.primary{background:var(--grad);border:0;color:#fff;min-width:170px;justify-content:center;font-weight:700;box-shadow:0 4px 14px rgba(232,64,154,.25)}
+.btn.ghost{border:1px dashed var(--blue)}
+.btn:disabled{opacity:.4;cursor:not-allowed;box-shadow:none}
+.btn svg{width:14px;height:14px}
+.lblm{font-family:var(--mono);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.strip{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.st{font-family:var(--mono);font-size:14px;font-weight:600;padding:6px 10px;border-radius:8px;border:1px solid var(--line);background:var(--field);font-variant-numeric:tabular-nums;transition:background .2s,color .2s}
+.st.opt{border-style:dashed;border-color:var(--yellow);color:#9a6b00;background:#FFF8E6}
+.st.skip{opacity:.35;text-decoration:line-through}
+.st.done{background:var(--ink);border-color:var(--ink);color:#fff}
+.st.now{background:var(--blue);border-color:var(--blue);color:#fff}
+.st.imp{border-color:var(--pink);color:var(--pink);background:#FDEEF6}
+.st.imp.done,.st.imp.now{background:var(--pink);color:#fff}
+.toggle{display:inline-flex;align-items:center;gap:8px;cursor:pointer;font-size:13.5px;border:0;background:transparent;padding:4px 0;margin-left:auto;font-weight:600;color:var(--muted)}
+.toggle .sw2{width:40px;height:24px;border-radius:12px;background:#D5DBE2;position:relative;flex:none;transition:background .2s}
+.toggle .sw2::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:transform .2s;box-shadow:0 1px 2px rgba(0,0,0,.2)}
+.toggle[aria-checked="true"] .sw2{background:var(--yellow)}
+.toggle[aria-checked="true"] .sw2::after{transform:translateX(16px)}
+.side{display:flex;flex-direction:column;gap:14px}
+.side h2{margin:0;font-size:19px;font-weight:700;line-height:1.3}
+.side p{margin:0;color:#3a4550}
+.lbl{font-family:var(--mono);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);background:var(--field);border-radius:8px;padding:6px 10px;min-height:44px;min-width:56px;font-weight:600;font-size:14.5px;cursor:pointer;font-variant-numeric:tabular-nums}
+.chip[aria-pressed="true"]{border-color:var(--blue);background:var(--blue);color:#fff}
+.dens{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.dchip{border:1px solid var(--line);background:var(--field);border-radius:10px;padding:6px 6px 8px;cursor:pointer;text-align:center}
+.dchip svg{display:block;width:100%;height:34px;border-radius:6px;margin-bottom:5px}
+.dchip b{display:block;font-size:16px;font-weight:700}
+.dchip span{display:block;font-size:10.5px;line-height:1.2;color:var(--muted)}
+.dchip[aria-pressed="true"]{border-color:var(--blue);box-shadow:inset 0 0 0 1px var(--blue);background:#fff}
+.fit{display:flex;align-items:center;gap:12px;font-weight:600;font-size:14.5px;padding:10px 12px;border-radius:10px;background:var(--field);border:1px solid var(--line)}
+.fit small{display:block;font-weight:400;color:var(--muted);font-size:12.5px}
+.badge{width:28px;height:28px;border-radius:7px;flex:none;display:grid;place-items:center;color:#fff;font-weight:800;font-size:15px}
+.badge.ok{background:var(--ok)} .badge.no{background:var(--no)} .badge.mid{background:var(--yellow)}
+.summary{font-size:14.5px;padding:12px 14px;border-radius:10px;background:#FDEEF6;border:1px solid #F7C6DF}
+.spec{font-size:15px;line-height:1.9}
+.spec b{font-family:var(--mono);font-weight:600}
+.bigD{font-size:46px;font-weight:800;line-height:1;margin:0;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;display:inline-block}
+.q{font-weight:600;font-size:18px;line-height:1.35;margin:0}
+.si{font-weight:800;font-size:40px;line-height:1.1;margin:4px 0 0;color:var(--pink)}
+.tag{display:inline-block;padding:1px 10px;border-radius:6px;font-weight:700;font-size:.85em;letter-spacing:.06em;text-transform:uppercase;color:#fff;vertical-align:.08em}
+.tag.y{background:var(--blue)} .tag.v{background:var(--pink)}
+.mark{color:var(--blue);font-weight:700} .mark.v{color:var(--pink)}
+details{border-top:1px solid var(--line);padding-top:10px}
+summary{cursor:pointer;font-weight:700;min-height:32px;color:var(--blue)}
+details ul{margin:8px 0 0;padding-left:18px;font-size:13.5px;color:#3a4550}
+details li{margin-bottom:6px}
+.foot{margin-top:16px;font-size:12px;color:var(--muted);max-width:95ch}
+.go{margin-left:auto}
+[hidden]{display:none!important}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+.sys{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin:14px 0 0;padding:4px;background:var(--card);border:1px solid var(--line);border-radius:12px}
+.sysb{border:0;background:transparent;border-radius:9px;min-height:44px;font-weight:700;cursor:pointer;color:var(--muted);font-size:15px}
+.sysb[aria-selected="true"]{background:var(--grad);color:#fff;box-shadow:0 4px 14px rgba(232,64,154,.22)}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+<defs>
+  <linearGradient id="cyl" x1="0" x2="1">
+    <stop offset="0" stop-color="#0b0c0e"/><stop offset=".18" stop-color="#2d3238"/><stop offset=".38" stop-color="#6f7780"/>
+    <stop offset=".5" stop-color="#4b525a"/><stop offset=".8" stop-color="#1c2025"/><stop offset="1" stop-color="#08090a"/>
+  </linearGradient>
+  <linearGradient id="collar" x1="0" x2="1">
+    <stop offset="0" stop-color="#44474a"/><stop offset=".35" stop-color="#b9bcbf"/><stop offset=".5" stop-color="#d9dbdd"/><stop offset=".8" stop-color="#7c8084"/><stop offset="1" stop-color="#3a3d40"/>
+  </linearGradient>
+  <linearGradient id="tooth" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#a7abaf"/><stop offset=".5" stop-color="#4b4f53"/><stop offset="1" stop-color="#101112"/>
+  </linearGradient>
+  <linearGradient id="shade" x1="0" x2="1">
+    <stop offset="0" stop-color="#000" stop-opacity=".6"/><stop offset=".28" stop-color="#000" stop-opacity="0"/>
+    <stop offset=".42" stop-color="#fff" stop-opacity=".25"/><stop offset=".65" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".65"/>
+  </linearGradient>
+  <linearGradient id="goldG" x1="0" x2="1">
+    <stop offset="0" stop-color="#8a4f06"/><stop offset=".3" stop-color="#f0a92a"/><stop offset=".45" stop-color="#ffd27a"/><stop offset=".7" stop-color="#e59a1c"/><stop offset="1" stop-color="#7a4405"/>
+  </linearGradient>
+  <linearGradient id="steel" x1="0" x2="1">
+    <stop offset="0" stop-color="#6f7478"/><stop offset=".4" stop-color="#eceeef"/><stop offset=".6" stop-color="#c3c7ca"/><stop offset="1" stop-color="#63686c"/>
+  </linearGradient>
+  <linearGradient id="cortG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F3ECDA"/><stop offset="1" stop-color="#E2D5B6"/></linearGradient>
+  <linearGradient id="hole0" x1="0" x2="1"><stop offset="0" stop-color="#6e5a44"/><stop offset=".5" stop-color="#b59c7b"/><stop offset="1" stop-color="#6e5a44"/></linearGradient>
+  <linearGradient id="hole1" x1="0" x2="1"><stop offset="0" stop-color="#6b3a2c"/><stop offset=".5" stop-color="#b0705a"/><stop offset="1" stop-color="#6b3a2c"/></linearGradient>
+  <linearGradient id="hole2" x1="0" x2="1"><stop offset="0" stop-color="#5c1411"/><stop offset=".5" stop-color="#a1352b"/><stop offset="1" stop-color="#5c1411"/></linearGradient>
+  <linearGradient id="hole3" x1="0" x2="1"><stop offset="0" stop-color="#4f0a08"/><stop offset=".5" stop-color="#9c1c16"/><stop offset="1" stop-color="#4f0a08"/></linearGradient>
+  <pattern id="fl" width="14" height="14" patternUnits="userSpaceOnUse" patternTransform="translate(0,0)">
+    <rect width="14" height="14" fill="#e9a126"/>
+    <path d="M-4 10 L18 -2 L18 2 L-4 14 Z" fill="#ffdf94"/>
+    <path d="M-4 14 L18 2 L18 5 L-4 17 Z" fill="#9a5a08"/>
+    <path d="M-4 -4 L18 -16 L18 -12 L-4 0 Z" fill="#ffdf94"/>
+    <path d="M-4 24 L18 12 L18 16 L-4 28 Z" fill="#ffdf94"/>
+  </pattern>
+  <pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+    <rect width="6" height="6" fill="#FBD3E7"/><line x1="0" y1="0" x2="0" y2="6" stroke="#E8409A" stroke-width="2.2"/>
+  </pattern>
+  <pattern id="sech" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+    <line x1="0" y1="0" x2="0" y2="5" stroke="#1E2A33" stroke-opacity=".25" stroke-width="1"/>
+  </pattern>
+  <filter id="pD0" x="0" y="0" width="1" height="1" color-interpolation-filters="sRGB">
+    <feTurbulence type="fractalNoise" baseFrequency="0.085" numOctaves="3" seed="3" result="n"/>
+    <feColorMatrix in="n" type="matrix" values="0 0 0 0 .78  0 0 0 0 .70  0 0 0 0 .52  16 0 0 0 -11" result="m"/>
+    <feComposite in="m" in2="SourceGraphic" operator="in"/>
+  </filter>
+  <filter id="pD1" x="0" y="0" width="1" height="1" color-interpolation-filters="sRGB">
+    <feTurbulence type="fractalNoise" baseFrequency="0.08" numOctaves="3" seed="5" result="n"/>
+    <feColorMatrix in="n" type="matrix" values="0 0 0 0 .74  0 0 0 0 .52  0 0 0 0 .40  16 0 0 0 -9.4" result="m"/>
+    <feComposite in="m" in2="SourceGraphic" operator="in"/>
+  </filter>
+  <filter id="pD2" x="0" y="0" width="1" height="1" color-interpolation-filters="sRGB">
+    <feTurbulence type="fractalNoise" baseFrequency="0.07" numOctaves="3" seed="8" result="n"/>
+    <feColorMatrix in="n" type="matrix" values="0 0 0 0 .66  0 0 0 0 .26  0 0 0 0 .2  16 0 0 0 -7.8" result="m"/>
+    <feComposite in="m" in2="SourceGraphic" operator="in"/>
+  </filter>
+  <filter id="pD3" x="0" y="0" width="1" height="1" color-interpolation-filters="sRGB">
+    <feTurbulence type="fractalNoise" baseFrequency="0.06" numOctaves="3" seed="11" result="n"/>
+    <feColorMatrix in="n" type="matrix" values="0 0 0 0 .58  0 0 0 0 .14  0 0 0 0 .11  16 0 0 0 -6.4" result="m"/>
+    <feComposite in="m" in2="SourceGraphic" operator="in"/>
+  </filter>
+  <filter id="speck" x="0" y="0" width="1" height="1" color-interpolation-filters="sRGB">
+    <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="1" seed="4" result="n"/>
+    <feColorMatrix in="n" type="matrix" values="0 0 0 0 .35  0 0 0 0 .3  0 0 0 0 .2  9 0 0 0 -5.3" result="m"/>
+    <feComposite in="m" in2="SourceGraphic" operator="in"/>
+  </filter>
+  <linearGradient id="flT" x1="0" x2="1"><stop offset="0" stop-color="#1b1d20"/><stop offset=".25" stop-color="#6d7379"/><stop offset=".4" stop-color="#b9bec3"/><stop offset=".6" stop-color="#6a7075"/><stop offset="1" stop-color="#16181a"/></linearGradient>
+  <linearGradient id="flR" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8b9197"/><stop offset=".5" stop-color="#2a2d30"/><stop offset="1" stop-color="#0c0d0e"/></linearGradient>
+  <linearGradient id="flB" x1="0" x2="1"><stop offset="0" stop-color="#2c2f33"/><stop offset=".5" stop-color="#15171a"/><stop offset="1" stop-color="#2a2d31"/></linearGradient>
+  <linearGradient id="platG" x1="0" x2="1"><stop offset="0" stop-color="#8e9398"/><stop offset=".4" stop-color="#f2f3f4"/><stop offset="1" stop-color="#9ba0a5"/></linearGradient>
+  <linearGradient id="rimLight" x1="0" x2="1"><stop offset="0" stop-color="#9fd4ff" stop-opacity=".18"/><stop offset=".12" stop-color="#9fd4ff" stop-opacity="0"/><stop offset=".9" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#fff" stop-opacity=".12"/></linearGradient>
+  <filter id="grain" x="0" y="0" width="1" height="1" color-interpolation-filters="sRGB"><feTurbulence type="fractalNoise" baseFrequency="1.4" numOctaves="2" seed="9" result="n"/><feColorMatrix in="n" type="saturate" values="0" result="g"/><feComposite in="g" in2="SourceGraphic" operator="in"/></filter>
+  <radialGradient id="sceneBg" cx=".5" cy=".3" r=".8"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#E7ECF2"/></radialGradient>
+  <linearGradient id="enamel" x1="0" x2="1"><stop offset="0" stop-color="#cfd3d0"/><stop offset=".25" stop-color="#f7f8f6"/><stop offset=".55" stop-color="#ffffff"/><stop offset=".85" stop-color="#e3e6e2"/><stop offset="1" stop-color="#b9bdb9"/></linearGradient>
+  <linearGradient id="enamelV" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".0"/><stop offset=".75" stop-color="#f1e6c8" stop-opacity=".0"/><stop offset="1" stop-color="#e8d9ae" stop-opacity=".75"/></linearGradient>
+  <linearGradient id="rootG" x1="0" x2="1"><stop offset="0" stop-color="#d9c48e"/><stop offset=".4" stop-color="#f1e5bf"/><stop offset="1" stop-color="#cdb57b"/></linearGradient>
+  <radialGradient id="gumGloss" cx=".5" cy=".1" r=".7"><stop offset="0" stop-color="#fff" stop-opacity=".35"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/></radialGradient>
+  <linearGradient id="gumG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F08F99"/><stop offset=".45" stop-color="#DC5F6F"/><stop offset="1" stop-color="#B8404F"/></linearGradient>
+  <filter id="gumTex2" x="0" y="0" width="1" height="1" color-interpolation-filters="sRGB"><feTurbulence type="fractalNoise" baseFrequency=".6" numOctaves="2" seed="6" result="n"/><feColorMatrix in="n" type="matrix" values="0 0 0 0 1  0 0 0 0 .9  0 0 0 0 .92  1.4 0 0 0 -.55"/><feComposite in2="SourceGraphic" operator="in"/></filter>
+<filter id="poA0" x="0" y="0" width="1" height="1" color-interpolation-filters="sRGB"><feTurbulence type="fractalNoise" baseFrequency="0.075" numOctaves="3" seed="17" result="n"/><feColorMatrix in="n" type="matrix" values="0 0 0 0 .48  0 0 0 0 .36  0 0 0 0 .25  20 0 0 0 -14.00"/><feComposite in2="SourceGraphic" operator="in"/></filter>
+<filter id="poB0" x="0" y="0" width="1" height="1" color-interpolation-filters="sRGB"><feTurbulence type="fractalNoise" baseFrequency="0.075" numOctaves="3" seed="17" result="n"/><feColorMatrix in="n" type="matrix" values="0 0 0 0 .29  0 0 0 0 .2  0 0 0 0 .13  20 0 0 0 -15.20"/><feComposite in2="SourceGraphic" operator="in"/></filter>
+<filter id="poA1" x="0" y="0" width="1" height="1" color-interpolation-filters="sRGB"><feTurbulence type="fractalNoise" baseFrequency="0.07" numOctaves="3" seed="20" result="n"/><feColorMatrix in="n" type="matrix" values="0 0 0 0 .48  0 0 0 0 .34  0 0 0 0 .24  20 0 0 0 -12.60"/><feComposite in2="SourceGraphic" operator="in"/></filter>
+<filter id="poB1" x="0" y="0" width="1" height="1" color-interpolation-filters="sRGB"><feTurbulence type="fractalNoise" baseFrequency="0.07" numOctaves="3" seed="20" result="n"/><feColorMatrix in="n" type="matrix" values="0 0 0 0 .29  0 0 0 0 .19  0 0 0 0 .12  20 0 0 0 -13.80"/><feComposite in2="SourceGraphic" operator="in"/></filter>
+<filter id="poA2" x="0" y="0" width="1" height="1" color-interpolation-filters="sRGB"><feTurbulence type="fractalNoise" baseFrequency="0.066" numOctaves="3" seed="23" result="n"/><feColorMatrix in="n" type="matrix" values="0 0 0 0 .5  0 0 0 0 .26  0 0 0 0 .19  20 0 0 0 -11.20"/><feComposite in2="SourceGraphic" operator="in"/></filter>
+<filter id="poB2" x="0" y="0" width="1" height="1" color-interpolation-filters="sRGB"><feTurbulence type="fractalNoise" baseFrequency="0.066" numOctaves="3" seed="23" result="n"/><feColorMatrix in="n" type="matrix" values="0 0 0 0 .3  0 0 0 0 .11  0 0 0 0 .08  20 0 0 0 -12.40"/><feComposite in2="SourceGraphic" operator="in"/></filter>
+<filter id="poA3" x="0" y="0" width="1" height="1" color-interpolation-filters="sRGB"><feTurbulence type="fractalNoise" baseFrequency="0.06" numOctaves="3" seed="26" result="n"/><feColorMatrix in="n" type="matrix" values="0 0 0 0 .54  0 0 0 0 .23  0 0 0 0 .17  20 0 0 0 -9.80"/><feComposite in2="SourceGraphic" operator="in"/></filter>
+<filter id="poB3" x="0" y="0" width="1" height="1" color-interpolation-filters="sRGB"><feTurbulence type="fractalNoise" baseFrequency="0.06" numOctaves="3" seed="26" result="n"/><feColorMatrix in="n" type="matrix" values="0 0 0 0 .31  0 0 0 0 .08  0 0 0 0 .06  20 0 0 0 -11.00"/><feComposite in2="SourceGraphic" operator="in"/></filter>
+  <filter id="soft" x="-50%" y="-10%" width="200%" height="120%"><feGaussianBlur stdDeviation="2.6"/></filter>
+  <linearGradient id="compR" x1="0" x2="1"><stop offset="0" stop-color="#E8409A" stop-opacity=".55"/><stop offset=".55" stop-color="#F28CC2" stop-opacity=".28"/><stop offset="1" stop-color="#F7B8D9" stop-opacity="0"/></linearGradient>
+  <linearGradient id="compL" x1="1" x2="0"><stop offset="0" stop-color="#E8409A" stop-opacity=".55"/><stop offset=".55" stop-color="#F28CC2" stop-opacity=".28"/><stop offset="1" stop-color="#F7B8D9" stop-opacity="0"/></linearGradient>
+  <linearGradient id="blood" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b3221b"/><stop offset=".15" stop-color="#8a130f"/><stop offset="1" stop-color="#4a0605"/></linearGradient>
+  <linearGradient id="holeTop" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#000" stop-opacity=".45"/><stop offset=".25" stop-color="#000" stop-opacity=".1"/><stop offset="1" stop-color="#000" stop-opacity=".35"/></linearGradient>
+  <filter id="relief" x="0" y="0" width="1" height="1" color-interpolation-filters="sRGB">
+    <feTurbulence type="fractalNoise" baseFrequency="0.07" numOctaves="3" seed="21" result="n"/>
+    <feDiffuseLighting in="n" surfaceScale="5" lighting-color="#ffffff" result="l"><feDistantLight azimuth="235" elevation="50"/></feDiffuseLighting>
+    <feComposite in="l" in2="SourceGraphic" operator="in"/>
+  </filter>
+<linearGradient id="aoCyl" x1="0" x2="1"><stop offset="0" stop-color="#070b16"/><stop offset=".18" stop-color="#1b2a4a"/><stop offset=".38" stop-color="#4e6793"/><stop offset=".5" stop-color="#2f4470"/><stop offset=".8" stop-color="#121c33"/><stop offset="1" stop-color="#060912"/></linearGradient><linearGradient id="aoFlT" x1="0" x2="1"><stop offset="0" stop-color="#0e1629"/><stop offset=".25" stop-color="#3f5886"/><stop offset=".4" stop-color="#93a9cf"/><stop offset=".6" stop-color="#3d5582"/><stop offset="1" stop-color="#0c1324"/></linearGradient><linearGradient id="aoFlR" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7189b3"/><stop offset=".5" stop-color="#1a2744"/><stop offset="1" stop-color="#070b15"/></linearGradient><linearGradient id="aoFlB" x1="0" x2="1"><stop offset="0" stop-color="#1b2744"/><stop offset=".5" stop-color="#0b1222"/><stop offset="1" stop-color="#1a2642"/></linearGradient><linearGradient id="aoCollar" x1="0" x2="1"><stop offset="0" stop-color="#1c2a48"/><stop offset=".35" stop-color="#7f97c2"/><stop offset=".5" stop-color="#a9bcdd"/><stop offset=".8" stop-color="#3b5180"/><stop offset="1" stop-color="#152139"/></linearGradient><pattern id="aoflK" width="14" height="14" patternUnits="userSpaceOnUse" patternTransform="translate(0,0)">
+    <rect width="14" height="14" fill="#16181b"/><path d="M-4 10 L18 -2 L18 2 L-4 14 Z" fill="#8a9096"/><path d="M-4 -4 L18 -16 L18 -12 L-4 0 Z" fill="#8a9096"/><path d="M-4 24 L18 12 L18 16 L-4 28 Z" fill="#8a9096"/>
+  </pattern>
+</defs>
+</svg>
+
+<div class="wrap">
+  <header>
+    <div class="brand"><div class="bt" id="sysName">AnyRidge</div><div class="bs">Secuencia de fresado</div></div>
+    <div class="hdate" id="sysNote">Protocolo por densidad ósea D1–D4</div>
+  </header>
+  <div class="sys" role="tablist" aria-label="Sistema de implante">
+    <button class="sysb" role="tab" id="sysAR" aria-selected="true">AnyRidge</button>
+    <button class="sysb" role="tab" id="sysAO" aria-selected="false">AnyOne</button>
+  </div>
+  <div id="blkAR">
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" id="t1" aria-selected="true" aria-controls="v1">Core y rosca</button>
+    <button class="tab" role="tab" id="t2" aria-selected="false" aria-controls="v2">Secuencia de fresado</button>
+  </div>
+
+  <!-- VISTA 1 -->
+  <section class="view" id="v1" role="tabpanel" aria-labelledby="t1">
+    <div class="stage card">
+      <p class="ctitle">Core vs rosca</p>
+      <div class="canvas"><svg id="svg1" viewBox="0 0 440 470" role="img" aria-label="Implante AnyRidge en corte mostrando core y rosca"></svg></div>
+      <div class="bar">
+        <div class="lbl" style="margin:0">Implante</div>
+        <div class="chips" id="c1"></div>
+        <div class="ctrls"><button class="btn primary go" id="goSeq">Ver su secuencia de fresado</button></div>
+      </div>
+    </div>
+    <div class="side card">
+      <div><p class="bigD" id="bigD">Ø5.5</p><span id="bigCat" style="display:block;color:var(--muted);font-weight:600;font-size:13px">Wide</span></div>
+      <div class="spec">
+        Diámetro del <span class="mark">core</span> = <b id="sCore">Ø3.3</b><br>
+        Diámetro máx. de <span class="mark v">rosca</span> = <b id="sThread">Ø5.9</b><br>
+        Rosca por lado ≈ <b id="sBite">1.3 mm</b>
+      </div>
+      <h2>Se fresa al <span class="tag y">core</span>, no al diámetro del implante</h2>
+      <p>La rosca autorroscante corta su propio camino y le da el diámetro final. Por eso varios diámetros comparten el mismo core.</p>
+      <div>
+        <p class="q" id="qText">¿Se puede colocar un implante de 5,5 mm en una osteotomía de 3,3 mm?</p>
+        <p class="si">¡sí!</p>
+        <small id="qNote" style="color:var(--muted)">En hueso D4.</small>
+      </div>
+    </div>
+  </section>
+
+  <!-- VISTA 2 -->
+  <section class="view" id="v2" role="tabpanel" aria-labelledby="t2" hidden>
+    <div class="stage card">
+      <p class="ctitle">Animación</p>
+      <div class="canvas">
+        <div class="hud" id="hud" aria-live="polite"></div>
+        <svg id="svg2" viewBox="0 0 520 480" role="img" aria-label="Corte de hueso con la secuencia de fresado animada">
+          <g id="bone"></g><g id="dyn"></g>
+        </svg>
+      </div>
+      <div class="bar">
+        <div class="ctrls">
+          <button class="btn primary" id="play"><svg viewBox="0 0 16 16"><path d="M3 2 L14 8 L3 14 Z" fill="currentColor"/></svg><span>Reproducir</span></button>
+          <button class="btn ghost" id="next">Siguiente paso</button>
+          <button class="btn" id="reset">Reiniciar</button>
+          <button class="toggle" id="optT" role="switch" aria-checked="false"><span class="sw2"></span>Fresas opcionales</button>
+        </div>
+        <div><div class="lbl" style="margin-bottom:6px">Secuencia</div><div class="strip" id="seq"></div></div>
+      </div>
+    </div>
+    <div class="side card">
+      <p class="ctitle" style="margin:0">Caso</p>
+      <div>
+        <div class="lbl">Implante</div>
+        <div class="chips" id="c2"></div>
+      </div>
+      <div>
+        <div class="lbl">Densidad ósea: cómo se ve al fresar</div>
+        <div class="dens" id="dens"></div>
+      </div>
+      <div class="fit" id="fit"></div>
+      <div class="summary" id="summary" hidden></div>
+      <details>
+        <summary>Claves clínicas</summary>
+        <ul>
+          <li>Hueso duro (D1–D2): fresa final lo más cercana al diámetro máximo de rosca, para que el implante no se atore.</li>
+          <li>Hueso blando (D3–D4): quédate corto. El core fijo y la rosca autorroscante dan la estabilidad.</li>
+          <li>Inserta con contra-ángulo hasta que queden 2 roscas por fuera y termina con ratchet.</li>
+          <li>Torque de inserción máximo recomendado: 50 Ncm.</li>
+          <li>El largo real es 1.0 mm menor que el de catálogo en Ø3.5–5.5, y 0.5 mm menor en Ø6.0–8.0: queda subcrestal sin fresado extra.</li>
+          <li>Salvo alvéolos, el diámetro máximo recomendado en D1 es Ø4.0 o Ø4.5. Los Super Wide son para hueso blando y alvéolos.</li>
+        </ul>
+      </details>
+    </div>
+  </section>
+
+  <p class="foot">Fuente: AnyRidge Drilling Sequence (MegaGen). Fresado a largo de catálogo de 10 mm. Secuencias para core Ø2.8 (Ø3.5), core Ø3.3 (Ø4.0–5.5) y core Ø4.8 (Ø6.0–8.0). Ilustración esquemática: paso de rosca y conexión interna no están a escala exacta.</p>
+  </div>
+  <div id="blkAO" hidden>
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" id="ao_t1" aria-selected="true" aria-controls="ao_v1">Perfil del implante</button>
+    <button class="tab" role="tab" id="ao_t2" aria-selected="false" aria-controls="ao_v2">Secuencia de fresado</button>
+  </div>
+
+  <!-- VISTA 1 -->
+  <section class="view" id="ao_v1" role="tabpanel" aria-labelledby="ao_t1">
+    <div class="stage card">
+      <p class="ctitle">Cuerpo cónico vs fresa final</p>
+      <div class="canvas"><svg id="ao_svg1" viewBox="0 0 440 480" role="img" aria-label="Implante AnyOne en corte con el contorno de la fresa final"></svg></div>
+      <div class="bar">
+        <div class="lbl" style="margin:0">Regular Thread</div><div class="chips" id="ao_c1"></div><div class="lbl" style="margin:6px 0 0">Deep Thread · hueso blando</div><div class="chips" id="ao_c1d"></div>
+        <div class="ctrls"><button class="btn primary go" id="ao_goSeq">Ver su secuencia de fresado</button></div>
+      </div>
+    </div>
+    <div class="side card">
+      <div><p class="bigD" id="ao_bigD">Ø4.0</p><span id="ao_bigCat" style="display:block;color:var(--muted);font-weight:600;font-size:13px"></span></div>
+      <div class="spec">
+        <span class="mark">Core</span> en el cuello = <b id="ao_sCore"></b><br>
+        Ápice = <b id="ao_sApex"></b><br>
+        Rosca más ancha = <b id="ao_sThread"></b> <span style="color:var(--muted)">(prof. <b id="ao_sDepth" style="font-weight:600"></b>)</span><br>
+        <span class="mark v">Fresa final</span> = <b id="ao_sFinal"></b>
+      </div>
+      <p id="ao_deepNote" hidden style="padding:10px 12px;border-radius:10px;background:#FDEEF6;border:1px solid #F7C6DF"><b>Deep Thread:</b> diseño con rosca extendida que da mayor estabilidad inicial en hueso blando (catálogo AnyOne Internal). Su secuencia de fresado no está en la guía oficial.</p>
+      <h2>Las <span class="tag y">Shaping Drill</span> copian el cuerpo del implante</h2>
+      <p>Son fresas cónicas: la osteotomía tiene la misma forma que el cuerpo. La rosca Knife Thread corta y condensa el hueso para dar la estabilidad inicial.</p>
+      <div id="ao_qBlk">
+        <p class="q">¿Cambia la secuencia según la densidad ósea?</p>
+        <p class="si">¡no!</p>
+        <small style="color:var(--muted)">Es la misma secuencia en cualquier hueso. En D1 y D2 solo agregas la Dense Drill para conformar la cortical.</small>
+      </div>
+    </div>
+  </section>
+
+  <!-- VISTA 2 -->
+  <section class="view" id="ao_v2" role="tabpanel" aria-labelledby="ao_t2" hidden>
+    <div class="stage card">
+      <p class="ctitle">Animación</p>
+      <div class="canvas">
+        <div class="hud" id="ao_hud" aria-live="polite"></div>
+        <svg id="ao_svg2" viewBox="0 0 520 480" role="img" aria-label="Corte de hueso con la secuencia de fresado AnyOne animada">
+          <g id="ao_bone"></g><g id="ao_dyn"></g>
+        </svg>
+      </div>
+      <div class="bar">
+        <div class="ctrls">
+          <button class="btn primary" id="ao_play"><svg viewBox="0 0 16 16"><path d="M3 2 L14 8 L3 14 Z" fill="currentColor"/></svg><span>Reproducir</span></button>
+          <button class="btn ghost" id="ao_next">Siguiente paso</button>
+          <button class="btn" id="ao_reset">Reiniciar</button>
+          
+        </div>
+        <div><div class="lbl" style="margin-bottom:6px">Secuencia</div><div class="strip" id="ao_seq"></div></div>
+      </div>
+    </div>
+    <div class="side card">
+      <p class="ctitle" style="margin:0">Caso</p>
+      <div>
+        <div class="lbl">Implante · Regular Thread</div>
+        <div class="chips" id="ao_c2"></div>
+        <div class="lbl" style="margin-top:10px">Deep Thread · hueso blando</div>
+        <div class="chips" id="ao_c2d"></div>
+      </div>
+      <div>
+        <div class="lbl">Densidad ósea: cómo se ve al fresar</div>
+        <div class="dens" id="ao_dens"></div>
+      </div>
+      <div class="fit" id="ao_fit"></div>
+      <div class="summary" id="ao_summary" hidden></div>
+      <details>
+        <summary>Claves clínicas</summary>
+        <ul>
+          <li>Todas las fresas tienen marcas de profundidad de 7.0 a 15.0 mm (surcos y láser) para verificación visual y radiográfica.</li>
+          <li>Las marcas de las Shaping Drill son 0.5 mm más largas que el implante: si fresas hasta la marca, el implante queda 0.5 mm subcrestal.</li>
+          <li>El largo de la fresa no incluye la punta (dimensión Y). Ejemplo Ø5.0 × 10 mm: 0.5 + 0.89 + 9.5 = 10.89 mm de profundidad ósea.</li>
+          <li>Hueso tipo I y II: usa la Dense Drill para retirar y conformar la cortical. D2 hasta la primera línea, D1 hasta la segunda.</li>
+          <li>La línea de plataforma del conector (contra-ángulo o ratchet) debe quedar a ras con la plataforma del implante.</li>
+        </ul>
+      </details>
+    </div>
+  </section>
+
+  <p class="foot">Fuente: AnyOne Surgical Drilling Sequence y catálogo AnyOne Internal (MegaGen). Línea Internal Regular Thread, largo de catálogo 10 mm (largo real 9.5 mm). Deep Thread (IF…DC): dimensiones del catálogo AnyOne Internal; su secuencia de fresado no aparece en la guía oficial, por eso no se anima. Special 7 mm no incluido. La profundidad de las líneas de la Dense Drill es ilustrativa. Ilustración esquemática: paso de rosca y conexión no están a escala exacta.</p>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+const REDUCED=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+const HAND='Poppins, Segoe UI, sans-serif', SANS='Poppins, Segoe UI, sans-serif', MONO='IBM Plex Mono, Consolas, monospace';
+const INK='#16202A', VIOLET='#E8409A', YELLOW='#0B87C9';
+const DRILL_ORDER=['L',2.0,2.9,3.3,3.8,4.3,4.8,5.4,5.9];
+const DN=['D1','D2','D3','D4'];
+const DENS=[
+  {t:'Blanco, sin sangre',cort:2.4,trab:'#E6DABD'},
+  {t:'Blanco, poca sangre',cort:1.7,trab:'#E0D2B2'},
+  {t:'Rojo, con sangre',cort:1.0,trab:'#DBC9A6'},
+  {t:'Casi solo sangre',cort:.5,trab:'#D3BF9A'}
+];
+const W=(core,thread,plat,apex,sub,cat,fit,seq)=>({core,thread,plat,apex,sub,cat,fit,seq});
+const IMPL={
+  '3.5':W(2.8,4.0,3.5,1.6,1.0,'Small',[2,3,2,2],[[3.8,[]],[3.3,[3.8]],[3.3,[]],[2.9,[]]]),
+  '4.0':W(3.3,4.4,3.5,1.8,1.0,'Regular',[2,3,1,1],[[4.3,[]],[3.8,[4.3]],[3.3,[3.8]],[3.3,[]]]),
+  '4.5':W(3.3,4.9,3.5,1.8,1.0,'Regular',[2,2,3,1],[[4.8,[]],[4.3,[4.8]],[3.8,[4.3]],[3.3,[3.8]]]),
+  '5.0':W(3.3,5.4,3.5,1.8,1.0,'Wide',[1,2,2,3],[[5.4,[]],[4.8,[5.4]],[4.3,[4.8]],[3.3,[3.8,4.3]]]),
+  '5.5':W(3.3,5.9,3.5,1.8,1.0,'Wide',[1,1,2,3],[[5.9,[]],[5.4,[5.9]],[4.8,[5.4]],[3.3,[3.8,4.3,4.8]]]),
+  '6.0':W(4.8,6.4,5.0,3.0,.5,'Super Wide',[0,0,2,3],[null,null,[5.9,[]],[4.8,[5.4,5.9]]]),
+  '6.5':W(4.8,6.9,5.0,3.0,.5,'Super Wide',[0,0,0,3],[null,null,null,[4.8,[5.4,5.9]]]),
+  '7.0':W(4.8,7.4,5.0,3.0,.5,'Super Wide',[0,0,0,3],[null,null,null,[4.8,[5.4,5.9]]]),
+  '7.5':W(4.8,7.9,5.0,3.0,.5,'Super Wide',[0,0,0,3],[null,null,null,[4.8,[5.4,5.9]]]),
+  '8.0':W(4.8,8.4,5.0,3.0,.5,'Super Wide',[0,0,0,3],[null,null,null,[4.8,[5.4,5.9]]])
+};
+const FIT_TXT=[
+  ['No indicado','Los Super Wide son para hueso blando (D3/D4) y alvéolos.'],
+  ['Posible, no es su indicación principal','Hay mejores diámetros para este hueso.'],
+  ['Recomendado',''],
+  ['Indicación ideal','La combinación que MegaGen marca como la mejor.']
+];
+const $=id=>document.getElementById(id);
+const f1=v=>typeof v==='number'?v.toFixed(1):v;
+const mmTxt=v=>v.toFixed(2).replace(/0$/,'');
+const ease=t=>t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
+const lerp=(a,b,t)=>a+(b-a)*t;
+const n1=v=>v.toFixed(1);
+const P=0.95;
+
+/* ---------- implante ---------- */
+/* ---------- perfil AnyRidge (mm desde la plataforma) ---------- */
+const TH0=.95, ELEV=.17; // inicio de la rosca / inclinación de la vista
+function coreR(I,len,y){const c=I.core/2,a=I.apex/2;
+  if(y<.45)return I.plat/2; if(y<.95)return lerp(I.plat/2,c,(y-.45)/.5);
+  const z=len-1.9; if(y<=z)return c; const u=Math.min(1,(y-z)/1.9); return lerp(c,a,u*u);}
+function outR(I,len,y){const c=coreR(I,len,y),t=I.thread/2;
+  if(y<TH0)return c; let o=t; if(y<TH0+.7)o=lerp(c,t,(y-TH0)/.7);
+  const z=len-3.4; if(y>z)o=lerp(o,c+.08,Math.min(1,(y-z)/2.9)); return Math.max(c,o);}
+function envelope(cx,top,s,I,len){
+  const pts=[];for(let y=0;y<=len;y+=.1)pts.push([outR(I,len,y),y]);
+  let d='M'+n1(cx)+' '+n1(top)+' ';pts.forEach(([x,y])=>d+='L'+n1(cx+x*s)+' '+n1(top+y*s)+' ');
+  for(let i=pts.length-1;i>=0;i--)d+='L'+n1(cx-pts[i][0]*s)+' '+n1(top+pts[i][1]*s)+' ';return d+'Z';}
+function bodyPath(cx,top,s,I,len){
+  const pts=[];for(let y=0;y<=len-.05;y+=.08)pts.push([coreR(I,len,y),y]);
+  let d='M'+n1(cx-I.plat/2*s)+' '+n1(top)+' ';pts.forEach(([x,y])=>d+='L'+n1(cx+x*s)+' '+n1(top+y*s)+' ');
+  d+='Q'+n1(cx)+' '+n1(top+(len+.35)*s)+' '+n1(cx-coreR(I,len,len-.05)*s)+' '+n1(top+(len-.05)*s)+' ';
+  for(let i=pts.length-1;i>=0;i--)d+='L'+n1(cx-pts[i][0]*s)+' '+n1(top+pts[i][1]*s)+' ';return d+'Z';}
+/* una vuelta de rosca en hélice: cara superior (iluminada), canto redondeado y sombra sobre el core */
+function turn(cx,top,s,I,len,yk,from,to,back){
+  const pS=P*s,N=18,o=[],c=[];
+  for(let i=0;i<=N;i++){const th=from+(to-from)*i/N,yw=yk+th/(2*Math.PI)*pS,ym=(yw-top)/s;
+    if(ym<0||ym>len)continue;const ro=outR(I,len,ym),rc=coreR(I,len,ym);if(ro-rc<.02){o.push(null);c.push(null);continue;}
+    o.push([cx+ro*s*Math.sin(th),yw+ro*s*ELEV*Math.cos(th)]);c.push([cx+rc*s*Math.sin(th),yw+rc*s*ELEV*Math.cos(th)]);}
+  const segs=[];let cur=null;o.forEach((p,i)=>{if(p){if(!cur){cur=[];segs.push(cur);}cur.push(i);}else cur=null;});
+  let g='';const tk=.13*s;
+  segs.forEach(ix=>{if(ix.length<2)return;
+    const O=ix.map(i=>o[i]),C=ix.map(i=>c[i]);
+    const face='M'+O.map(p=>n1(p[0])+' '+n1(p[1])).join(' L')+' L'+C.slice().reverse().map(p=>n1(p[0])+' '+n1(p[1])).join(' L')+' Z';
+    if(back){g+='<path d="'+face+'" fill="url(#flB)"/>';return;}
+    const rim='M'+O.map(p=>n1(p[0])+' '+n1(p[1])).join(' L')+' L'+O.slice().reverse().map(p=>n1(p[0])+' '+n1(p[1]+tk)).join(' L')+' Z';
+    g+='<path d="M'+C.map(p=>n1(p[0])+' '+n1(p[1]+tk*1.2)).join(' L')+'" stroke="#000" stroke-opacity=".45" stroke-width="'+n1(pS*.28)+'" fill="none" stroke-linecap="round"/>';
+    g+='<path d="'+rim+'" fill="url(#flR)"/>';
+    g+='<path d="'+face+'" fill="url(#flT)"/>';
+    g+='<path d="M'+O.map(p=>n1(p[0])+' '+n1(p[1]+tk*.35)).join(' L')+'" stroke="#e9ecef" stroke-opacity=".75" stroke-width="'+n1(Math.max(.8,tk*.3))+'" fill="none"/>';});
+  return g;
+}
+function implantSVG(uid,cx,top,s,I,len,anchorY){
+  const pS=P*s,body=bodyPath(cx,top,s,I,len),env=envelope(cx,top,s,I,len);
+  const k0=Math.floor((top-anchorY)/pS)-2,k1=Math.ceil((top+len*s-anchorY)/pS)+2;
+  let back='',front='';
+  for(let k=k1;k>=k0;k--){const yk=anchorY+k*pS;back+=turn(cx,top,s,I,len,yk,Math.PI/2,Math.PI*1.5,true);front+=turn(cx,top,s,I,len,yk,-Math.PI/2,Math.PI/2,false);}
+  let g='<clipPath id="'+uid+'s"><path d="'+env+'"/><path d="'+body+'"/></clipPath>';
+  g+=back;
+  g+='<path d="'+body+'" fill="url(#cyl)"/>';
+  // collar mecanizado
+  const cy1=top+.95*s,pr=I.plat/2*s,cr=I.core/2*s;
+  g+='<path d="M'+n1(cx-pr)+' '+n1(top)+' L'+n1(cx+pr)+' '+n1(top)+' L'+n1(cx+pr)+' '+n1(top+.4*s)+' Q'+n1(cx+pr)+' '+n1(top+.7*s)+' '+n1(cx+cr)+' '+n1(cy1)+' L'+n1(cx-cr)+' '+n1(cy1)+' Q'+n1(cx-pr)+' '+n1(top+.7*s)+' '+n1(cx-pr)+' '+n1(top+.4*s)+' Z" fill="url(#collar)"/>';
+  g+='<ellipse cx="'+cx+'" cy="'+n1(cy1)+'" rx="'+n1(cr)+'" ry="'+n1(cr*ELEV)+'" fill="none" stroke="#000" stroke-opacity=".25" stroke-width="1.5"/>';
+  g+=front;
+  // ranura apical de corte
+  const ay=top+(len-2.1)*s;
+  g+='<path d="M'+n1(cx+cr*.05)+' '+n1(ay)+' L'+n1(cx+cr*.42)+' '+n1(ay+.5*s)+' L'+n1(cx+cr*.5)+' '+n1(top+(len-.35)*s)+' L'+n1(cx+cr*.12)+' '+n1(top+(len-.08)*s)+' Z" fill="#060708" opacity=".72"/>'+
+     '<path d="M'+n1(cx+cr*.05)+' '+n1(ay)+' L'+n1(cx+cr*.12)+' '+n1(top+(len-.08)*s)+'" stroke="#c9ced2" stroke-opacity=".5" stroke-width="1"/>';
+  // superficie XPEED (grano) + luz
+  g+='<g clip-path="url(#'+uid+'s)"><rect x="'+n1(cx-I.thread/2*s-2)+'" y="'+n1(top+.95*s)+'" width="'+n1(I.thread*s+4)+'" height="'+n1(len*s)+'" filter="url(#grain)" opacity=".35" style="mix-blend-mode:overlay"/>'+
+     '<rect x="'+n1(cx-I.thread/2*s-2)+'" y="'+n1(top)+'" width="'+n1(I.thread*s+4)+'" height="'+n1(len*s)+'" fill="url(#rimLight)"/></g>';
+  // plataforma con conexión cónica interna
+  g+='<ellipse cx="'+cx+'" cy="'+n1(top)+'" rx="'+n1(pr)+'" ry="'+n1(pr*ELEV)+'" fill="url(#platG)"/>';
+  g+='<ellipse cx="'+cx+'" cy="'+n1(top+.02*s)+'" rx="'+n1(1.25*s)+'" ry="'+n1(1.25*s*ELEV)+'" fill="#0d0e0f"/>';
+  g+='<ellipse cx="'+cx+'" cy="'+n1(top+.05*s)+'" rx="'+n1(.95*s)+'" ry="'+n1(.95*s*ELEV)+'" fill="#26292c"/>';
+  g+='<ellipse cx="'+cx+'" cy="'+n1(top)+'" rx="'+n1(pr)+'" ry="'+n1(pr*ELEV)+'" fill="none" stroke="#fff" stroke-opacity=".6" stroke-width="1"/>';
+  return g;
+}
+function tagSVG(x,y,txt,bg,size,anchor){
+  size=Math.round(size*.52);
+  return '<g class="tg" data-pad="'+(size*.55)+'"><rect rx="6" fill="'+bg+'"/><text x="'+n1(x)+'" y="'+n1(y-2)+'" text-anchor="'+(anchor||'start')+'" font-family="'+HAND+'" font-weight="700" font-size="'+size+'" letter-spacing="'+(size*.05)+'" fill="#fff">'+txt+'</text></g>';
+}
+function fitTags(svg){
+  svg.querySelectorAll('g.tg').forEach(g=>{const t=g.querySelector('text'),r=g.querySelector('rect');
+    try{const b=t.getBBox(),p=+g.dataset.pad;r.setAttribute('x',b.x-p);r.setAttribute('y',b.y-p*.35);r.setAttribute('width',b.width+p*2);r.setAttribute('height',b.height+p*.7);}catch(e){}});
+}
+function showTab(n){$('t1').setAttribute('aria-selected',n===1);$('t2').setAttribute('aria-selected',n===2);$('v1').hidden=n!==1;$('v2').hidden=n!==2;if(n===1)drawV1();else render();}
+$('t1').onclick=()=>showTab(1);$('t2').onclick=()=>showTab(2);
+function chipRow(el,list,selected,onPick){el.innerHTML='';list.forEach(k=>{const b=document.createElement('button');b.className='chip';b.textContent='Ø'+k;b.setAttribute('aria-pressed',k===selected);b.onclick=()=>onPick(k);el.appendChild(b);});}
+
+/* ===== Vista 1 ===== */
+const V1=['4.0','4.5','5.0','5.5','6.0','6.5','7.0','7.5','8.0'];
+let v1Sel='5.5',v1={core:3.3,thread:5.9,plat:3.5,apex:1.8},v1Anim=0;
+function pickV1(k){
+  v1Sel=k;chipRow($('c1'),V1,v1Sel,pickV1);updateV1Text();
+  const a={...v1},b=IMPL[k],my=++v1Anim,ts=performance.now(),dur=REDUCED?1:600;
+  (function f(now){if(my!==v1Anim)return;const t=Math.min(1,(now-ts)/dur),e=ease(t);
+    ['core','thread','plat','apex'].forEach(q=>v1[q]=lerp(a[q],b[q],e));drawV1();if(t<1)requestAnimationFrame(f);})(performance.now());
+}
+function updateV1Text(){
+  const I=IMPL[v1Sel];
+  $('bigD').textContent='Ø'+v1Sel;$('bigCat').textContent=I.cat+' (core Ø'+f1(I.core)+')';
+  $('sCore').textContent='Ø'+f1(I.core);$('sThread').textContent='Ø'+f1(I.thread);
+  $('sBite').textContent=mmTxt((I.thread-I.core)/2)+' mm';
+  const d4=I.seq[3][0];
+  $('qText').textContent='¿Se puede colocar un implante de '+v1Sel.replace('.',',')+' mm en una osteotomía de '+f1(d4).replace('.',',')+' mm?';
+  $('qNote').textContent='En hueso D4, fresa final Ø'+f1(d4)+'. La rosca hace el resto.';
+}
+function drawV1(){
+  const s=30,cx=250,top=40,len=9,I=v1,X=v=>n1(cx+v*s),Y=v=>n1(top+v*s),bot=top+len*s,anchor=top+1.3*s,ps=P*s;
+  const c=I.core/2,t=I.thread/2,a=I.apex/2,p=I.plat/2,end=len-1.3;
+  let g='<clipPath id="rh"><rect x="'+cx+'" y="0" width="400" height="470"/></clipPath><clipPath id="lh"><rect x="0" y="0" width="'+cx+'" height="470"/></clipPath>';
+  g+='<g clip-path="url(#rh)">'+implantSVG('v1',cx,top,s,I,len,anchor)+'</g>';
+  let sec='M'+X(0)+' '+Y(0)+' L'+X(-p)+' '+Y(0)+' ';for(let y=.4;y<=len-.05;y+=.08)sec+='L'+n1(cx-coreR(I,len,y)*s)+' '+n1(top+y*s)+' ';sec+='Q'+X(-.3)+' '+Y(len+.3)+' '+X(0)+' '+Y(len+.25)+' Z';
+  g+='<g clip-path="url(#lh)"><clipPath id="v1env"><path d="'+envelope(cx,top,s,I,len)+'"/></clipPath>';
+  let teeth='';
+  for(let yk=anchor-Math.ceil((anchor-top)/ps+2)*ps;yk<bot+ps;yk+=ps){const yL=yk-ps/4,ym=(yL-top)/s;if(ym<TH0||ym>len)continue;
+    const ro=outR(I,len,ym)*s,rc=coreR(I,len,ym)*s;if(ro-rc<1)continue;
+    teeth+='<path d="M'+n1(cx-rc)+' '+n1(yL-ps*.22)+' L'+n1(cx-ro+3)+' '+n1(yL-ps*.07)+' Q'+n1(cx-ro)+' '+n1(yL-ps*.02)+' '+n1(cx-ro+3)+' '+n1(yL+ps*.06)+' L'+n1(cx-rc)+' '+n1(yL+ps*.2)+' Z" fill="'+VIOLET+'"/>';}
+  g+='<g clip-path="url(#v1env)">'+teeth+'</g>';
+  g+='<path d="'+sec+'" fill="#DDF0FA"/><path d="'+sec+'" fill="url(#sech)"/><path d="'+sec+'" fill="none" stroke="'+INK+'" stroke-width="1.2"/>';
+  g+='<rect x="'+X(-1.15)+'" y="'+Y(0)+'" width="'+n1(1.15*s)+'" height="'+n1(2.2*s)+'" fill="#2a2f33"/>';
+  g+='<rect x="'+X(-.9)+'" y="'+Y(2.2)+'" width="'+n1(.9*s)+'" height="'+n1(3.4*s)+'" fill="#2a2f33"/>';
+  for(let k=0;k<9;k++)g+='<line x1="'+X(-.9)+'" y1="'+n1(top+(2.5+k*.35)*s)+'" x2="'+X(-.62)+'" y2="'+n1(top+(2.65+k*.35)*s)+'" stroke="#9CCFEA" stroke-width="1.4"/>';
+  g+='</g>';
+  // guías
+  [X(-c),X(c)].forEach(x=>g+='<line x1="'+x+'" y1="16" x2="'+x+'" y2="'+(bot+30)+'" stroke="'+INK+'" stroke-width="1.3" stroke-dasharray="6 5"/>');
+  [X(-t),X(t)].forEach(x=>g+='<line x1="'+x+'" y1="'+(top+24)+'" x2="'+x+'" y2="'+(bot+76)+'" stroke="'+VIOLET+'" stroke-width="1.3"/>');
+  g+='<text x="'+(cx+8)+'" y="'+(top-14)+'" fill="#6B7176" font-size="13" font-family="'+SANS+'" font-weight="600">Vista real</text><text x="'+(cx-8)+'" y="'+(top-14)+'" text-anchor="end" fill="#6B7176" font-size="13" font-family="'+SANS+'" font-weight="600">Corte</text>';
+  // etiquetas estilo marcador
+  const ly1=top+7.1*s;let tY=anchor-Math.ceil((anchor-top)/ps+2)*ps;while(tY-ps/4<top+2.6*s)tY+=ps;const ly2=tY-ps/4;
+  g+='<path d="M'+X(-c*.55)+' '+n1(ly1)+' Q'+n1(cx-c*s-40)+' '+n1(ly1+14)+' 104 '+n1(ly1)+'" stroke="'+INK+'" stroke-width="1.4" fill="none"/><circle cx="'+X(-c*.55)+'" cy="'+n1(ly1)+'" r="3.5" fill="'+INK+'"/>';
+  g+=tagSVG(100,ly1+8,'CORE',YELLOW,30,'end');
+  g+='<path d="M'+n1(cx-(c+t)/2*s)+' '+n1(ly2)+' Q'+n1(cx-t*s-30)+' '+n1(ly2-14)+' 118 '+n1(ly2)+'" stroke="'+INK+'" stroke-width="1.4" fill="none"/><circle cx="'+n1(cx-(c+t)/2*s)+'" cy="'+n1(ly2)+'" r="3.5" fill="'+INK+'"/>';
+  g+=tagSVG(114,ly2+8,'ROSCA','#E8409A',30,'end');
+  g+=dim(cx-c*s,cx+c*s,bot+44,'core Ø'+I.core.toFixed(1)+': a esto se fresa',YELLOW);
+  g+=dim(cx-t*s,cx+t*s,bot+94,'rosca Ø'+I.thread.toFixed(1)+': diámetro final','#E8409A');
+  $('svg1').innerHTML=g;fitTags($('svg1'));
+  function dim(x1,x2,y,label,hl){
+    return '<line x1="'+n1(x1)+'" y1="'+y+'" x2="'+n1(x2)+'" y2="'+y+'" stroke="'+INK+'" stroke-width="1.6"/>'+
+      '<path d="M'+n1(x1)+' '+y+' l8 -5 v10 Z M'+n1(x2)+' '+y+' l-8 -5 v10 Z" fill="'+INK+'"/>'+tagSVG(cx,y+30,label,hl,28,'middle');
+  }
+}
+
+/* ===== Vista 2 ===== */
+const S={s:18,cx:260,crest:170,depth:10,W:520,H:480};
+const sel={diam:'4.0',dens:1,opt:false};
+let steps=[],allSteps=[],runId=0,st;
+function fresh(){st={holes:[],cur:null,drill:null,implant:null,parts:[],blood:0,idx:0,running:false,done:false};}
+fresh();
+$('goSeq').onclick=()=>{sel.diam=v1Sel;const I=IMPL[v1Sel];sel.dens=I.fit.indexOf(Math.max(...I.fit));rebuild();showTab(2);window.scrollTo({top:0});};
+
+function drawBone(){
+  const D=DENS[sel.dens],c=D.cort,s=S.s,cx=S.cx,top=S.crest,W=S.W,H=S.H,dn=sel.dens;
+  const I=IMPL[sel.diam],X=v=>n1(cx+v*s),Y=v=>n1(top+v*s);
+  const base=['#ECE2CB','#E8DCC2','#E4D5B8','#DFCFAF'][dn];
+  let g='<rect x="-40" y="-40" width="'+(W+80)+'" height="'+(H+80)+'" fill="url(#sceneBg)"/>';
+  // hueso: trabecular con poros y relieve
+  g+='<rect x="-40" y="'+top+'" width="'+(W+80)+'" height="'+(H-top+60)+'" fill="'+base+'"/>';
+  g+='<rect x="-40" y="'+n1(top+c*s)+'" width="'+(W+80)+'" height="'+(H-top+60)+'" filter="url(#poA'+dn+')"/>';
+  g+='<rect x="-40" y="'+n1(top+c*s)+'" width="'+(W+80)+'" height="'+(H-top+60)+'" filter="url(#poB'+dn+')"/>';
+  g+='<rect x="-40" y="'+top+'" width="'+(W+80)+'" height="'+(H-top+60)+'" filter="url(#relief)" opacity=".22" style="mix-blend-mode:multiply"/>';
+  // cortical de la cresta
+  g+='<path d="M-40 '+top+' H'+(W+40)+' V'+n1(top+c*s)+' Q'+n1(W*.75)+' '+n1(top+c*s+3)+' '+n1(W/2)+' '+n1(top+c*s)+' T-40 '+n1(top+c*s)+' Z" fill="url(#cortG)"/>';
+  g+='<rect x="-40" y="'+top+'" width="'+(W+80)+'" height="'+n1(c*s)+'" filter="url(#speck)" opacity=".35"/>';
+  // conducto mandibular
+  const cy=top+14.9*s,ch=2.2*s;
+  g+='<rect x="-40" y="'+n1(cy)+'" width="'+(W+80)+'" height="'+n1(ch)+'" rx="'+n1(ch/2)+'" fill="#F3DDCF" stroke="#F4ECDC" stroke-width="3"/>';
+  g+='<path d="M-40 '+n1(cy+ch*.35)+' C'+n1(W*.3)+' '+n1(cy+ch*.2)+' '+n1(W*.6)+' '+n1(cy+ch*.5)+' '+(W+40)+' '+n1(cy+ch*.35)+'" stroke="#C0392B" stroke-width="2.4" fill="none"/>';
+  g+='<path d="M-40 '+n1(cy+ch*.55)+' C'+n1(W*.3)+' '+n1(cy+ch*.7)+' '+n1(W*.6)+' '+n1(cy+ch*.45)+' '+(W+40)+' '+n1(cy+ch*.6)+'" stroke="#E7C04A" stroke-width="3" fill="none"/>';
+  g+='<path d="M-40 '+n1(cy+ch*.75)+' C'+n1(W*.3)+' '+n1(cy+ch*.85)+' '+n1(W*.6)+' '+n1(cy+ch*.65)+' '+(W+40)+' '+n1(cy+ch*.78)+'" stroke="#2F5DA8" stroke-width="2.2" fill="none"/>';
+  // dientes vecinos (raíz en hueso con ligamento, corona sobre la encía)
+  const tooth=(tx,sg)=>{const T=(x,y)=>n1(cx+(tx+x*sg)*s)+' '+n1(top+(y-1.6)*s);
+    const root='M'+T(-2.8,0)+' C'+T(-2.9,4)+' '+T(-2.2,9)+' '+T(-.8,14.1)+' Q'+T(0,14.6)+' '+T(.8,14.1)+' C'+T(2.2,9)+' '+T(2.9,4)+' '+T(2.8,0)+' Z';
+    const crown='M'+T(-2.8,.25)+' C'+T(-3.6,-1)+' '+T(-3.9,-3.2)+' '+T(-3.7,-5.2)+' C'+T(-3.6,-6.4)+' '+T(-2.8,-7.2)+' '+T(-1.8,-7)+' Q'+T(-.9,-6.4)+' '+T(0,-6.8)+' Q'+T(.9,-7.3)+' '+T(1.8,-7)+' C'+T(2.8,-7.2)+' '+T(3.6,-6.4)+' '+T(3.7,-5.2)+' C'+T(3.9,-3.2)+' '+T(3.6,-1)+' '+T(2.8,.25)+' Z';
+    return {r:'<path d="'+root+'" fill="none" stroke="#F6F0E2" stroke-width="7"/><path d="'+root+'" fill="none" stroke="#C4473F" stroke-width="3.2"/><path d="'+root+'" fill="url(#rootG)"/>',
+      c:'<path d="'+crown+'" fill="url(#enamel)"/><path d="'+crown+'" fill="url(#enamelV)"/><ellipse cx="'+n1(cx+(tx-.9*sg)*s)+'" cy="'+n1(top-5.6*s)+'" rx="'+n1(.7*s)+'" ry="'+n1(1.9*s)+'" fill="#fff" opacity=".7" filter="url(#soft)"/>'};};
+  const tL=tooth(-10.2,1),tR=tooth(10.2,-1);
+  g+=tL.r+tR.r+tL.c+tR.c;
+  // encía con colgajo abierto en el sitio del implante
+  const win=Math.max(I.thread,I.plat)/2+1.7;
+  const gum=sg=>{const P=(x,y)=>n1(cx+sg*x*s)+' '+n1(top+y*s);
+    return 'M'+P(16,.25)+' L'+P(16,-1.9)+' C'+P(13,-1.65)+' '+P(11.4,-1.65)+' '+P(9.4,-1.95)+' C'+P(8,-2.3)+' '+P(7.3,-3.1)+' '+P(6.5,-2.95)+' C'+P(5.9,-2.75)+' '+P(win+1.2,-2.25)+' '+P(win+.5,-2.1)+' Q'+P(win-.05,-2.0)+' '+P(win-.08,-1.1)+' Q'+P(win-.12,.05)+' '+P(win-.4,.25)+' Z';};
+  [1,-1].forEach(sg=>{const d=gum(sg);g+='<path d="'+d+'" fill="url(#gumG)"/><path d="'+d+'" fill="url(#gumGloss)"/><path d="'+d+'" filter="url(#gumTex2)" opacity=".22"/><path d="'+d+'" fill="none" stroke="#fff" stroke-opacity=".45" stroke-width="2.5" filter="url(#soft)"/><path d="'+d+'" fill="none" stroke="#9c2f40" stroke-opacity=".35" stroke-width="1"/>';});
+  g+='<text x="10" y="'+(H-12)+'" font-family="'+SANS+'" font-weight="700" font-size="13" fill="'+INK+'" style="paint-order:stroke" stroke="#F4ECDC" stroke-width="3">'+DN[sel.dens]+'  '+D.t.toLowerCase()+'</text>';
+  $('bone').innerHTML=g;
+}
+function holePath(w,depth,tipH){
+  const s=S.s,cx=S.cx,t=S.crest-1,b=S.crest+depth*s,hw=w*s/2,th=Math.min(tipH,depth)*s;
+  return 'M'+n1(cx-hw)+' '+t+' L'+n1(cx-hw)+' '+n1(b-th)+' L'+cx+' '+n1(b)+' L'+n1(cx+hw)+' '+n1(b-th)+' L'+n1(cx+hw)+' '+t+' Z';
+}
+function finalHoleW(){let w=0;st.holes.forEach(h=>{if(!h.lance)w=Math.max(w,h.w);});return w;}
+function drillSVG(d){
+  const s=S.s,cx=S.cx,tipY=S.crest+d.tip*s,sh=1.175*s;
+  if(d.lance){const hw=.8*s;
+    return '<rect x="'+n1(cx-sh)+'" y="0" width="'+n1(sh*2)+'" height="'+n1(Math.max(0,tipY-7*s))+'" fill="url(#steel)"/>'+
+      '<path d="M'+n1(cx-sh)+' '+n1(tipY-7*s)+' L'+n1(cx-hw)+' '+n1(tipY-6*s)+' L'+n1(cx-hw)+' '+n1(tipY-2.6*s)+' L'+cx+' '+n1(tipY)+' L'+n1(cx+hw)+' '+n1(tipY-2.6*s)+' L'+n1(cx+hw)+' '+n1(tipY-6*s)+' L'+n1(cx+sh)+' '+n1(tipY-7*s)+' Z" fill="url(#steel)" stroke="#666" stroke-width=".8"/>'+
+      '<path d="M'+cx+' '+n1(tipY)+' L'+cx+' '+n1(tipY-6*s)+'" stroke="#7a7e82" stroke-width="1.2"/>';}
+  const hw=d.w*s/2,th=d.w*.32*s,cutTop=tipY-12*s;
+  const body='M'+n1(cx-hw)+' '+n1(cutTop)+' L'+n1(cx-hw)+' '+n1(tipY-th)+' L'+cx+' '+n1(tipY)+' L'+n1(cx+hw)+' '+n1(tipY-th)+' L'+n1(cx+hw)+' '+n1(cutTop)+' Z';
+  const shTop=cutTop-1.2*s;
+  let g='<rect x="'+n1(cx-sh)+'" y="-20" width="'+n1(sh*2)+'" height="'+n1(Math.max(0,shTop+20))+'" fill="url(#goldG)"/>';
+  g+='<path d="M'+n1(cx-sh)+' '+n1(shTop)+' L'+n1(cx+sh)+' '+n1(shTop)+' L'+n1(cx+hw)+' '+n1(cutTop)+' L'+n1(cx-hw)+' '+n1(cutTop)+' Z" fill="url(#goldG)"/>';
+  g+='<path d="'+body+'" fill="url(#fl)"/><path d="'+body+'" fill="url(#shade)" opacity=".7"/>';
+  // bandas negras de profundidad (como el kit)
+  [[7,.55],[8.5,.55],[10,1.0],[11.5,.55]].forEach(([m,h])=>{const y=tipY-m*s;
+    g+='<rect x="'+n1(cx-hw)+'" y="'+n1(y-h*s/2)+'" width="'+n1(hw*2)+'" height="'+n1(h*s)+'" fill="#111"/>';});
+  if(d.load>0&&d.deb){const cols=[['#F4ECDA','#D9C9A3'],['#EBDCC2','#C98770'],['#B6392E','#E2CFB0'],['#9A1A15','#7c1812']][sel.dens];
+    const n=Math.floor(d.load*d.deb.length),span=Math.min(9,Math.max(2,d.tip>0?d.tip:9))*s;
+    g+='<clipPath id="dcl"><path d="'+body+'"/></clipPath><g clip-path="url(#dcl)">';
+    for(let i=0;i<n;i++){const q=d.deb[i];g+='<circle cx="'+n1(cx+q.u*hw*.85)+'" cy="'+n1(tipY-th-q.v*span)+'" r="'+n1(q.r)+'" fill="'+cols[i%2]+'" opacity=".9"/>';}
+    g+='</g>';}
+  const ly=shTop-4*s; if(ly>14) g+='<text transform="translate('+n1(cx+4)+' '+n1(ly)+') rotate(-90)" font-family="'+SANS+'" font-weight="700" font-size="11" fill="#3a2200">'+f1(d.w)+'</text>';
+  return g;
+}
+function holesD(){const a=st.holes.map(x=>holePath(x.w,x.depth,x.tipH));if(st.cur&&st.cur.depth>0)a.push(holePath(st.cur.w,st.cur.depth,st.cur.tipH));return a.join(' ');}
+function driverSVG(top,phase){
+  const s=S.s,cx=S.cx,w=2.4*s,hx=2.0*s;
+  let g='<rect x="'+n1(cx-w/2)+'" y="-20" width="'+n1(w)+'" height="'+n1(top-1.1*s+20)+'" fill="url(#steel)"/>';
+  g+='<path d="M'+n1(cx-w/2)+' '+n1(top-1.1*s)+' L'+n1(cx+w/2)+' '+n1(top-1.1*s)+' L'+n1(cx+hx/2)+' '+n1(top-.5*s)+' L'+n1(cx+hx/2)+' '+n1(top+.3*s)+' L'+n1(cx-hx/2)+' '+n1(top+.3*s)+' L'+n1(cx-hx/2)+' '+n1(top-.5*s)+' Z" fill="url(#steel)" stroke="#8a8f93" stroke-width=".6"/>';
+  for(let k=0;k<3;k++){const a=phase+k*2.094,x=Math.sin(a)*w/2*.92;if(Math.cos(a)>0)g+='<line x1="'+n1(cx+x)+'" y1="-20" x2="'+n1(cx+x)+'" y2="'+n1(top-1.2*s)+'" stroke="#7b8085" stroke-width="1.4" opacity="'+n1(.3+Math.cos(a)*.5)+'"/>';}
+  return g;
+}
+function render(){
+  const s=S.s,cx=S.cx,I=IMPL[sel.diam],b=S.crest+S.depth*s,D=DENS[sel.dens];let g='';
+  const hd=holesD();
+  if(hd){
+    const bx=cx-4.6*s,bw=9.2*s,by=S.crest-2,bh=10.6*s;
+    g+='<clipPath id="hc"><path d="'+hd+'"/></clipPath><g clip-path="url(#hc)">';
+    g+='<rect x="'+n1(bx)+'" y="'+by+'" width="'+n1(bw)+'" height="'+n1(bh)+'" fill="'+D.trab+'"/>';
+    g+='<rect x="'+n1(bx)+'" y="'+by+'" width="'+n1(bw)+'" height="'+n1(bh)+'" filter="url(#pD'+sel.dens+')"/>';
+    g+='<rect x="'+n1(bx)+'" y="'+by+'" width="'+n1(bw)+'" height="'+n1(bh)+'" fill="url(#hole'+sel.dens+')" opacity=".93"/>';
+    g+='<rect x="'+n1(bx)+'" y="'+by+'" width="'+n1(bw)+'" height="'+n1(bh)+'" fill="url(#holeTop)"/>';
+    if(st.blood>.05&&!st.implant){const yT=b-st.blood*s;
+      g+='<rect x="'+n1(bx)+'" y="'+n1(yT)+'" width="'+n1(bw)+'" height="'+n1(b-yT+4)+'" fill="url(#blood)" opacity=".92"/>';
+      g+='<rect x="'+n1(bx)+'" y="'+n1(yT)+'" width="'+n1(bw)+'" height="2" fill="#e0564c" opacity=".7"/>';}
+    g+='</g><path d="'+hd+'" fill="none" stroke="#2a0d08" stroke-opacity=".35" stroke-width="1"/>';
+  }
+  const hwMax=Math.max(I.thread,finalHoleW(),2)/2,dx=cx+(hwMax+1.6)*s;
+  g+='<line x1="'+n1(dx)+'" y1="'+S.crest+'" x2="'+n1(dx)+'" y2="'+b+'" stroke="'+INK+'" stroke-width="1.2" opacity=".7"/>'+
+     '<path d="M'+n1(dx-5)+' '+S.crest+' h10 M'+n1(dx-5)+' '+b+' h10" stroke="'+INK+'" stroke-width="1.2" opacity=".7"/>'+
+     '<text x="'+n1(dx+8)+'" y="'+n1(S.crest+5*s+5)+'" font-family="'+MONO+'" font-weight="600" font-size="13" fill="'+INK+'">10 mm</text>';
+  if(st.implant){
+    const realLen=10-I.sub,bottom=S.crest+st.implant.bottom*s,top=bottom-realLen*s,hw=finalHoleW(),bite=(I.thread-hw)/2;
+    const zb=Math.min(bottom-1.0*s,b);
+    if(zb>S.crest){ // hueso comprimido: halo translúcido y difuminado
+      const ext=(Math.max(bite,0)+.7)*s, hh=zb-S.crest;
+      g+='<g filter="url(#soft)">';
+      g+='<rect x="'+n1(cx+hw*s/2-2)+'" y="'+S.crest+'" width="'+n1(ext+2)+'" height="'+n1(hh)+'" fill="url(#compR)"/>';
+      g+='<rect x="'+n1(cx-hw*s/2-ext)+'" y="'+S.crest+'" width="'+n1(ext+2)+'" height="'+n1(hh)+'" fill="url(#compL)"/>';
+      g+='</g>';
+    }
+    g+=implantSVG('v2',cx,top,s,I,realLen,S.crest+I.sub*s+1.3*s);
+    if(!st.done) g+=driverSVG(top,st.implant.bottom/P*6.283);
+    if(st.done){const tx=cx-Math.max(I.thread,I.plat)*s/2-10;
+      g+='<path d="M'+n1(tx)+' '+S.crest+' h-14 M'+n1(tx)+' '+n1(top)+' h-14 M'+n1(tx-7)+' '+S.crest+' V'+n1(top)+'" stroke="'+VIOLET+'" stroke-width="2"/>';
+      g+=tagSVG(tx-18,top+7,I.sub.toFixed(1)+' mm subcrestal','#E8409A',21,'end');}
+  }
+  if(st.drill){
+    const d=st.drill;
+    if(d.tip>-3){ // irrigación
+      const ex=cx-(d.w/2)*s-3, ey=S.crest-6;
+      g+='<path d="M'+n1(ex-16)+' '+n1(S.crest-120)+' Q'+n1(ex-10)+' '+n1(S.crest-50)+' '+n1(ex)+' '+n1(ey)+'" stroke="#8FD0F2" stroke-width="2.6" fill="none" opacity=".75" stroke-linecap="round" stroke-dasharray="9 6" stroke-dashoffset="'+n1(-fluteOff*4)+'"/>';
+      g+='<ellipse cx="'+n1(cx)+'" cy="'+n1(S.crest-1)+'" rx="'+n1((d.w/2+1.2)*s)+'" ry="3" fill="#BFE6FA" opacity=".55"/>';
+    }
+    g+=drillSVG(d);
+  }
+  st.parts.forEach(p=>g+='<circle cx="'+n1(p.x)+'" cy="'+n1(p.y)+'" r="'+p.r+'" fill="'+p.c+'" opacity="'+n1(Math.max(0,p.life)*(p.a||1))+'"/>');
+  $('dyn').innerHTML=g;if(st.done)fitTags($('svg2'));
+}
+let fluteOff=0;
+function stepParticles(){
+  const d=st.drill,cols=[['#F4ECDA','#D9C9A3'],['#EBDCC2','#C98770'],['#B6392E','#E2CFB0'],['#9A1A15','#7c1812']][sel.dens];
+  if(d&&d.tip>0&&d.moving){
+    for(let i=0;i<3;i++){const sg=Math.random()<.5?-1:1,w=d.lance?1.6:d.w;
+      st.parts.push({x:S.cx+sg*w*S.s/2,y:S.crest-1,vx:sg*(.6+Math.random()*2.4),vy:-(1+Math.random()*2.6),r:(1+Math.random()*1.6).toFixed(1),c:cols[Math.random()<.6?0:1],life:1});}
+    if(Math.random()<.7){const sg=Math.random()<.5?-1:1;st.parts.push({x:S.cx+sg*(d.w/2+.3)*S.s,y:S.crest-3,vx:sg*(1.5+Math.random()*2.5),vy:-(.5+Math.random()*2),r:(1.2+Math.random()*1.4).toFixed(1),c:'#9ED6F5',life:1,a:.8});}
+    d.load=Math.min(1,(d.load||0)+.012);
+  }
+  if(st.implant&&st.implant.moving&&Math.random()<.5){const I=IMPL[sel.diam],sg=Math.random()<.5?-1:1;
+    st.parts.push({x:S.cx+sg*I.thread*S.s/2,y:S.crest-1,vx:sg*(.3+Math.random()*1.2),vy:-(.5+Math.random()*1.2),r:(.8+Math.random()*1.1).toFixed(1),c:cols[0],life:.8});}
+  st.parts.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=.18;p.life-=.028;});
+  st.parts=st.parts.filter(p=>p.life>0&&p.y<S.crest+4);
+  if(st.parts.length>200)st.parts.splice(0,st.parts.length-200);
+}
+function tween(ms,fn){
+  const my=runId,dur=REDUCED?Math.min(ms,60):ms;
+  return new Promise((res,rej)=>{const t0=performance.now();
+    (function f(now){if(my!==runId)return rej('cancel');const t=Math.min(1,(now-t0)/dur);fn(t);
+      if(!REDUCED){if(st.drill){fluteOff=(fluteOff+2.2)%14;$('fl').setAttribute('patternTransform','translate(0,'+fluteOff.toFixed(1)+')');}stepParticles();}
+      render();if(t<1)requestAnimationFrame(f);else res();})(performance.now());});
+}
+const BLOOD=[0,.9,3.2,5.5];
+async function doDrill(step){
+  const lance=step.d==='L',w=lance?1.6:step.d,depth=lance?4:10,tipH=lance?2.6:w*.32;
+  st.drill={w,lance,tip:-5,moving:false,load:0,deb:Array.from({length:44},()=>({u:Math.random()*2-1,v:Math.random(),r:.8+Math.random()*1.4}))};
+  const b0=st.blood;
+  await tween(380,t=>{st.drill.tip=lerp(-5,0,ease(t));st.blood=b0*(1-t);});
+  let reach=0;
+  const seg=async(ms,a,z)=>tween(ms,t=>{const tip=lerp(a,z,ease(t));st.drill.tip=tip;st.drill.moving=tip>=reach-.05;reach=Math.max(reach,tip);st.cur={w,depth:reach,tipH};});
+  if(lance) await seg(800,0,depth);
+  else { await seg(750,0,depth*.6); await seg(260,depth*.6,depth*.38); await seg(820,depth*.38,depth); }
+  st.drill.moving=false;
+  st.holes.push({w,depth,tipH,lance});st.cur=null;
+  const bt=lance?BLOOD[sel.dens]*.3:BLOOD[sel.dens];
+  await tween(560,t=>{st.drill.tip=lerp(depth,-5.5,ease(t));if(st.drill.tip<depth-1)st.blood=bt*ease(t);});
+  st.drill=null;
+  await tween(250,t=>{});
+}
+async function doImplant(){
+  st.implant={bottom:-1,moving:true};
+  await tween(500,t=>{st.implant.bottom=lerp(-1,.6,ease(t));});
+  await tween(3000,t=>{st.implant.bottom=lerp(.6,10,1-Math.pow(1-t,2.2));});
+  st.implant.moving=false;
+}
+function buildSteps(){
+  const sq=IMPL[sel.diam].seq[sel.dens];allSteps=[];steps=[];if(!sq)return;
+  const [fin,opt]=sq;
+  for(const d of DRILL_ORDER){allSteps.push({kind:'drill',d,opt:false});if(d===fin)break;}
+  opt.forEach(d=>allSteps.push({kind:'drill',d,opt:true}));
+  allSteps.push({kind:'implant'});
+  steps=allSteps.filter(x=>!x.opt||sel.opt);
+}
+function stepName(x){return x.kind==='implant'?'Implante':(x.d==='L'?'Lance':'Ø'+f1(x.d));}
+function renderSide(){
+  chipRow($('c2'),Object.keys(IMPL),sel.diam,k=>{sel.diam=k;rebuild();});
+  const dens=$('dens');dens.innerHTML='';
+  DN.forEach((n,i)=>{const b=document.createElement('button');b.className='dchip';b.setAttribute('aria-pressed',i===sel.dens);
+    b.innerHTML='<svg viewBox="0 0 80 36" preserveAspectRatio="none"><rect width="80" height="36" fill="'+DENS[i].trab+'"/><rect width="80" height="36" filter="url(#pD'+i+')"/></svg><b>'+n+'</b><span>'+DENS[i].t+'</span>';
+    b.onclick=()=>{sel.dens=i;rebuild();};dens.appendChild(b);});
+  const I=IMPL[sel.diam],fv=I.fit[sel.dens],ft=FIT_TXT[fv];
+  let extra=ft[1];if(fv===1&&sel.dens===0)extra='Salvo alvéolos, en D1 lo recomendado es Ø4.0 o Ø4.5.';
+  const badge=fv===0?'<span class="badge no">✕</span>':fv===1?'<span class="badge mid">~</span>':'<span class="badge ok">✓</span>';
+  $('fit').innerHTML=badge+'<div>Ø'+sel.diam+' '+I.cat+' en '+DN[sel.dens]+': '+ft[0]+(extra?'<small>'+extra+'</small>':'')+'</div>';
+  $('optT').setAttribute('aria-checked',sel.opt);
+  $('optT').hidden=!allSteps.some(x=>x.opt);
+  updateUI();
+}
+function updateUI(){
+  const seq=$('seq');seq.innerHTML='';
+  if(!allSteps.length){const e=document.createElement('span');e.className='st skip';e.textContent='sin secuencia';seq.appendChild(e);}
+  let k=0;
+  allSteps.forEach((x,i)=>{const e=document.createElement('span');e.className='st';const inc=!x.opt||sel.opt;
+    if(x.opt)e.classList.add('opt');if(x.kind==='implant')e.classList.add('imp');if(!inc)e.classList.add('skip');
+    else{if(k<st.idx)e.classList.add('done');else if(k===st.idx&&st.running)e.classList.add('now');k++;}
+    e.textContent=x.opt?'('+stepName(x)+')':stepName(x);seq.appendChild(e);});
+  const none=!steps.length;
+  $('play').disabled=none||st.running;$('next').disabled=none||st.running||st.done;
+  $('play').querySelector('span').textContent=st.done?'Repetir':'Reproducir';
+  const I=IMPL[sel.diam];let h='';
+  if(none)h='<span class="k">Ø'+sel.diam+' en '+DN[sel.dens]+'</span><br><span class="big no">No indicado</span>';
+  else if(st.done)h='<span class="k">Largo de catálogo 10 mm, largo real '+(10-I.sub).toFixed(1)+' mm</span><br><span class="big mark v">Ø'+sel.diam+' colocado</span>';
+  else if(st.idx<steps.length){const x=steps[st.idx];
+    h='<span class="k">Paso '+(st.idx+1)+' de '+steps.length+'</span><br><span class="big mark'+(x.kind==='implant'?' v':'')+'">'+(x.kind==='implant'?'Inserción del implante':'Fresa '+stepName(x)+(x.opt?' (opcional)':''))+'</span>'+
+      '<small>'+(x.kind==='implant'?'La rosca corta hueso más allá de la osteotomía':(x.d==='L'?'Marca el punto de entrada':'Hasta la banda de 10 mm'))+'</small>';}
+  $('hud').innerHTML=h;
+  const sm=$('summary');
+  if(st.done){const hw=finalHoleW(),bite=(I.thread-hw)/2;
+    let t='<strong>Fresa final Ø'+f1(hw)+'</strong>, core Ø'+f1(I.core)+', rosca Ø'+f1(I.thread)+'. ';
+    t+=bite>.05?'La rosca corta y sujeta '+mmTxt(bite)+' mm de hueso por lado.':'La osteotomía llega casi al diámetro de rosca: en hueso duro así evitas que se atore.';
+    if(hw>I.core+.01)t+=' Fresaste '+(hw-I.core).toFixed(1)+' mm más que el core para bajar la fricción.';
+    sm.innerHTML=t;sm.hidden=false;}else sm.hidden=true;
+}
+function reset(){runId++;fresh();render();updateUI();}
+function rebuild(){runId++;fresh();buildSteps();drawBone();render();renderSide();}
+async function runStep(x){if(x.kind==='drill')await doDrill(x);else await doImplant();}
+async function play(){
+  if(st.running||!steps.length)return;if(st.done)reset();
+  st.running=true;updateUI();
+  try{while(st.idx<steps.length){await runStep(steps[st.idx]);st.idx++;updateUI();await tween(300,()=>{});}st.done=true;}catch(e){return;}
+  st.running=false;updateUI();render();
+}
+async function next(){
+  if(st.running||st.done||!steps.length)return;
+  st.running=true;updateUI();
+  try{await runStep(steps[st.idx]);st.idx++;if(st.idx>=steps.length)st.done=true;await tween(300,()=>{});}catch(e){return;}
+  st.running=false;updateUI();render();
+}
+$('play').onclick=play;$('next').onclick=next;$('reset').onclick=reset;
+$('optT').onclick=()=>{sel.opt=!sel.opt;runId++;fresh();buildSteps();render();renderSide();};
+
+chipRow($('c1'),V1,v1Sel,pickV1);updateV1Text();drawV1();rebuild();
+window.__redraw=window.__redraw||{};window.__redraw[typeof lab==='function'?'AO':'AR']=()=>{drawV1();render();};
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{drawV1();drawBone();render();});
+})();
+</script>
+<script>
+(function(){
+  const map={AR:['AnyRidge','Protocolo por densidad ósea D1–D4'],AO:['AnyOne','Internal · protocolo simplificado']};
+  function pick(k){['AR','AO'].forEach(x=>{document.getElementById('sys'+x).setAttribute('aria-selected',x===k);document.getElementById('blk'+x).hidden=x!==k;});
+    document.getElementById('sysName').textContent=map[k][0];setTimeout(()=>window.__redraw&&window.__redraw[k]&&window.__redraw[k](),0);document.getElementById('sysNote').textContent=map[k][1];}
+  document.getElementById('sysAR').onclick=()=>pick('AR');document.getElementById('sysAO').onclick=()=>pick('AO');
+})();
+</script>
+<script>
+(function(){
+"use strict";
+const REDUCED=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+const HAND='Poppins, Segoe UI, sans-serif', SANS='Poppins, Segoe UI, sans-serif', MONO='IBM Plex Mono, Consolas, monospace';
+const INK='#16202A', VIOLET='#E8409A', YELLOW='#0B87C9';
+const DN=['D1','D2','D3','D4'];
+const DENS=[
+  {t:'Blanco, sin sangre',cort:2.4,trab:'#E6DABD'},
+  {t:'Blanco, poca sangre',cort:1.7,trab:'#E0D2B2'},
+  {t:'Rojo, con sangre',cort:1.0,trab:'#DBC9A6'},
+  {t:'Casi solo sangre',cort:.5,trab:'#D3BF9A'}
+];
+const IMPL={
+  '3.5':{core:3.4,thread:3.9,plat:3.5,apex:2.6,final:3.3,code:'IF3510C'},
+  '4.0':{core:3.6,thread:4.3,plat:3.9,apex:3.0,final:3.6,code:'IF4010C'},
+  '4.5':{core:4.1,thread:4.8,plat:3.9,apex:3.5,final:4.2,code:'IF4510C'},
+  '5.0':{core:4.6,thread:5.3,plat:3.9,apex:3.6,final:4.8,code:'IF5010C'},
+  '6.0':{core:5.6,thread:6.3,plat:3.9,apex:4.6,final:5.8,code:'IF6010C'},
+  '7.0':{core:6.6,thread:7.3,plat:3.9,apex:5.7,final:6.9,code:'IF7010C'},
+  '4.5D':{core:3.6,thread:4.8,plat:3.9,apex:3.5,final:null,deep:true,code:'IF4510DC'},
+  '5.5D':{core:4.6,thread:5.8,plat:3.9,apex:4.1,final:null,deep:true,code:'IF5510DC'},
+  '6.5D':{core:5.6,thread:6.8,plat:3.9,apex:5.1,final:null,deep:true,code:'IF6510DC'},
+  '7.5D':{core:6.6,thread:7.8,plat:3.9,apex:6.2,final:null,deep:true,code:'IF7510DC'},
+  '8.0D':{core:6.6,thread:8.3,plat:3.9,apex:6.7,final:null,deep:true,code:'IF8010DC'}
+};
+const REG=['3.5','4.0','4.5','5.0','6.0','7.0'],DEEP=['4.5D','5.5D','6.5D','7.5D','8.0D'];
+const lab=k=>'Ø'+k.replace('D','');
+const SHAPING=[3.3,3.6,4.2,4.8,5.8,6.9];
+const YL={2.8:.58,3.3:.59,3.6:.68,4.2:.85,4.8:.89,5.8:.94,6.9:.94};
+const DAPEX={3.3:2.6,3.6:3.0,4.2:3.5,4.8:3.6,5.8:4.6,6.9:5.7};
+const LEN=9.5,SUB=.5,STRAIGHT=3.0,P=.8,ELEV=.17,TH0=.9;
+const DENSE_DEPTH=[2.4,1.4]; // ilustrativo: D1 2ª línea, D2 1ª línea
+const $=id=>document.getElementById('ao_'+id);
+const f1=v=>typeof v==='number'?v.toFixed(1):v;
+const f2=v=>v.toFixed(2);
+const mmTxt=v=>v.toFixed(2).replace(/0$/,'');
+const ease=t=>t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
+const lerp=(a,b,t)=>a+(b-a)*t;
+const n1=v=>v.toFixed(1);
+
+/* ---------- perfil AnyOne (mm desde la plataforma) ---------- */
+function coreR(I,len,y){const a=I.apex/2,c=I.core/2,p=I.plat/2;
+  if(y<.25)return p; if(y<.8)return lerp(p,c,(y-.25)/.55);
+  if(y<=STRAIGHT)return c; const z=len-.35;
+  if(y<=z)return lerp(c,a+.08,(y-STRAIGHT)/(z-STRAIGHT));
+  return lerp(a+.08,a*.72,Math.min(1,(y-z)/.35));}
+function outR(I,len,y){const c=coreR(I,len,y),td=(I.thread-I.core)/2;
+  if(y<TH0)return c; let k=Math.min(1,(y-TH0)/.4); const z=len-1.4; if(y>z)k*=Math.max(0,1-(y-z)/1.15); return c+td*k;}
+function envelope(cx,top,s,I,len){
+  const pts=[];for(let y=0;y<=len;y+=.1)pts.push([outR(I,len,y),y]);
+  let d='M'+n1(cx)+' '+n1(top)+' ';pts.forEach(([x,y])=>d+='L'+n1(cx+x*s)+' '+n1(top+y*s)+' ');
+  for(let i=pts.length-1;i>=0;i--)d+='L'+n1(cx-pts[i][0]*s)+' '+n1(top+pts[i][1]*s)+' ';return d+'Z';}
+function bodyPath(cx,top,s,I,len){
+  const pts=[];for(let y=0;y<=len-.05;y+=.08)pts.push([coreR(I,len,y),y]);
+  let d='M'+n1(cx-I.plat/2*s)+' '+n1(top)+' ';pts.forEach(([x,y])=>d+='L'+n1(cx+x*s)+' '+n1(top+y*s)+' ');
+  d+='Q'+n1(cx)+' '+n1(top+(len+.35)*s)+' '+n1(cx-coreR(I,len,len-.05)*s)+' '+n1(top+(len-.05)*s)+' ';
+  for(let i=pts.length-1;i>=0;i--)d+='L'+n1(cx-pts[i][0]*s)+' '+n1(top+pts[i][1]*s)+' ';return d+'Z';}
+function turn(cx,top,s,I,len,yk,from,to,back){
+  const pS=P*s,N=18,o=[],c=[];
+  for(let i=0;i<=N;i++){const th=from+(to-from)*i/N,yw=yk+th/(2*Math.PI)*pS,ym=(yw-top)/s;
+    if(ym<0||ym>len)continue;const ro=outR(I,len,ym),rc=coreR(I,len,ym);if(ro-rc<.02){o.push(null);c.push(null);continue;}
+    o.push([cx+ro*s*Math.sin(th),yw+ro*s*ELEV*Math.cos(th)]);c.push([cx+rc*s*Math.sin(th),yw+rc*s*ELEV*Math.cos(th)]);}
+  const segs=[];let cur=null;o.forEach((p,i)=>{if(p){if(!cur){cur=[];segs.push(cur);}cur.push(i);}else cur=null;});
+  let g='';const tk=.13*s;
+  segs.forEach(ix=>{if(ix.length<2)return;
+    const O=ix.map(i=>o[i]),C=ix.map(i=>c[i]);
+    const face='M'+O.map(p=>n1(p[0])+' '+n1(p[1])).join(' L')+' L'+C.slice().reverse().map(p=>n1(p[0])+' '+n1(p[1])).join(' L')+' Z';
+    if(back){g+='<path d="'+face+'" fill="url(#aoFlB)"/>';return;}
+    const rim='M'+O.map(p=>n1(p[0])+' '+n1(p[1])).join(' L')+' L'+O.slice().reverse().map(p=>n1(p[0])+' '+n1(p[1]+tk)).join(' L')+' Z';
+    g+='<path d="M'+C.map(p=>n1(p[0])+' '+n1(p[1]+tk*1.2)).join(' L')+'" stroke="#000" stroke-opacity=".45" stroke-width="'+n1(pS*.28)+'" fill="none" stroke-linecap="round"/>';
+    g+='<path d="'+rim+'" fill="url(#aoFlR)"/>';
+    g+='<path d="'+face+'" fill="url(#aoFlT)"/>';
+    g+='<path d="M'+O.map(p=>n1(p[0])+' '+n1(p[1]+tk*.35)).join(' L')+'" stroke="#e9ecef" stroke-opacity=".75" stroke-width="'+n1(Math.max(.8,tk*.3))+'" fill="none"/>';});
+  return g;
+}
+function implantSVG(uid,cx,top,s,I,len,anchorY){
+  const pS=P*s,bodyD=bodyPath(cx,top,s,I,len),env=envelope(cx,top,s,I,len);
+  const k0=Math.floor((top-anchorY)/pS)-2,k1=Math.ceil((top+len*s-anchorY)/pS)+2;
+  let back='',front='';
+  for(let k=k1;k>=k0;k--){const yk=anchorY+k*pS;back+=turn(cx,top,s,I,len,yk,Math.PI/2,Math.PI*1.5,true);front+=turn(cx,top,s,I,len,yk,-Math.PI/2,Math.PI/2,false);}
+  let g='<clipPath id="'+uid+'s"><path d="'+env+'"/><path d="'+bodyD+'"/></clipPath>';
+  g+=back+'<path d="'+bodyD+'" fill="url(#aoCyl)"/>';
+  // hombro superior (S-line) más claro
+  let col='M'+n1(cx-I.plat/2*s)+' '+n1(top)+' ';
+  const pts=[];for(let y=0;y<=.85;y+=.05)pts.push([coreR(I,len,y),y]);
+  pts.forEach(([x,y])=>col+='L'+n1(cx+x*s)+' '+n1(top+y*s)+' ');
+  for(let i=pts.length-1;i>=0;i--)col+='L'+n1(cx-pts[i][0]*s)+' '+n1(top+pts[i][1]*s)+' ';
+  g+='<path d="'+col+'Z" fill="url(#aoCollar)"/>';
+  const cr=I.core/2*s;
+  g+='<ellipse cx="'+cx+'" cy="'+n1(top+.85*s)+'" rx="'+n1(cr)+'" ry="'+n1(cr*ELEV)+'" fill="none" stroke="#000" stroke-opacity=".25" stroke-width="1.5"/>';
+  g+=front;
+  const ar=I.apex/2*s,ay=top+(len-2.4)*s;
+  g+='<path d="M'+n1(cx+ar*.05)+' '+n1(ay)+' L'+n1(cx+ar*.45)+' '+n1(ay+.5*s)+' L'+n1(cx+ar*.55)+' '+n1(top+(len-.3)*s)+' L'+n1(cx+ar*.12)+' '+n1(top+(len-.06)*s)+' Z" fill="#03050a" opacity=".75"/>'+
+     '<path d="M'+n1(cx+ar*.05)+' '+n1(ay)+' L'+n1(cx+ar*.12)+' '+n1(top+(len-.06)*s)+'" stroke="#c9d6ee" stroke-opacity=".5" stroke-width="1"/>';
+  g+='<g clip-path="url(#'+uid+'s)"><rect x="'+n1(cx-I.thread/2*s-2)+'" y="'+n1(top+.85*s)+'" width="'+n1(I.thread*s+4)+'" height="'+n1(len*s)+'" filter="url(#grain)" opacity=".35" style="mix-blend-mode:overlay"/>'+
+     '<rect x="'+n1(cx-I.thread/2*s-2)+'" y="'+n1(top)+'" width="'+n1(I.thread*s+4)+'" height="'+n1(len*s)+'" fill="url(#rimLight)"/></g>';
+  const pr=I.plat/2*s;
+  g+='<ellipse cx="'+cx+'" cy="'+n1(top)+'" rx="'+n1(pr)+'" ry="'+n1(pr*ELEV)+'" fill="url(#platG)"/>';
+  g+='<ellipse cx="'+cx+'" cy="'+n1(top+.02*s)+'" rx="'+n1(1.35*s)+'" ry="'+n1(1.35*s*ELEV)+'" fill="#0a0e18"/>';
+  g+='<ellipse cx="'+cx+'" cy="'+n1(top+.05*s)+'" rx="'+n1(1.0*s)+'" ry="'+n1(1.0*s*ELEV)+'" fill="#1f2a40"/>';
+  g+='<ellipse cx="'+cx+'" cy="'+n1(top)+'" rx="'+n1(pr)+'" ry="'+n1(pr*ELEV)+'" fill="none" stroke="#fff" stroke-opacity=".6" stroke-width="1"/>';
+  return g;
+}
+function tagSVG(x,y,txt,bg,size,anchor){
+  size=Math.round(size*.52);
+  return '<g class="tg" data-pad="'+(size*.55)+'"><rect rx="6" fill="'+bg+'"/><text x="'+n1(x)+'" y="'+n1(y-2)+'" text-anchor="'+(anchor||'start')+'" font-family="'+HAND+'" font-weight="700" font-size="'+size+'" letter-spacing="'+(size*.05)+'" fill="#fff">'+txt+'</text></g>';
+}
+function fitTags(svg){
+  svg.querySelectorAll('g.tg').forEach(g=>{const t=g.querySelector('text'),r=g.querySelector('rect');
+    try{const b=t.getBBox(),p=+g.dataset.pad;r.setAttribute('x',b.x-p);r.setAttribute('y',b.y-p*.35);r.setAttribute('width',b.width+p*2);r.setAttribute('height',b.height+p*.7);}catch(e){}});
+}
+function showTab(n){$('t1').setAttribute('aria-selected',n===1);$('t2').setAttribute('aria-selected',n===2);$('v1').hidden=n!==1;$('v2').hidden=n!==2;if(n===1)drawV1();else render();}
+$('t1').onclick=()=>showTab(1);$('t2').onclick=()=>showTab(2);
+function chipRow(el,list,selected,onPick){el.innerHTML='';list.forEach(k=>{const b=document.createElement('button');b.className='chip';b.textContent=lab(k);b.setAttribute('aria-pressed',k===selected);b.onclick=()=>onPick(k);el.appendChild(b);});}
+
+/* ---------- perfiles de fresas (radio en función de u = mm sobre la punta) ---------- */
+function drillProf(k){
+  if(k.kind==='init') return u=>u<1.4?lerp(0,.9,u/1.4):.9;
+  if(k.kind==='twist'){const Y=YL[2.8];return u=>u<Y?lerp(0,1.4,u/Y):1.4;}
+  if(k.kind==='shape'){const d=k.d,a=DAPEX[d],Y=YL[d];return u=>u<Y?lerp(0,a/2,u/Y):(u<Y+6.5?lerp(a/2,d/2,(u-Y)/6.5):d/2);}
+  if(k.kind==='dense'){const D=k.d;return u=>u<.3?lerp(D/2-.3,D/2,u/.3):D/2;}
+}
+function fullDepth(k){return k.kind==='init'?10:k.kind==='twist'?10+YL[2.8]:k.kind==='shape'?10+YL[k.d]:k.depth;}
+function holeD(prof,t){
+  const s=S.s,cx=S.cx,L=[],R=[];
+  for(let z=-.1;z<=t+1e-6;z+=Math.max(.1,t/60)){const r=prof(Math.max(0,t-z))*s,y=S.crest+z*s;L.push([cx-r,y]);R.push([cx+r,y]);}
+  R.push([cx,S.crest+t*s]);
+  return 'M'+R.map(p=>n1(p[0])+' '+n1(p[1])).join(' L')+' L'+L.reverse().map(p=>n1(p[0])+' '+n1(p[1])).join(' L')+' Z';
+}
+
+/* ===== Vista 1 ===== */
+
+let v1Sel='4.0',v1={...IMPL['4.0']},v1Anim=0;
+function pickV1(k){
+  v1Sel=k;chipRow($('c1'),REG,v1Sel,pickV1);chipRow($('c1d'),DEEP,v1Sel,pickV1);updateV1Text();
+  const a={...v1},b=IMPL[k],my=++v1Anim,ts=performance.now(),dur=REDUCED?1:600;
+  (function f(now){if(my!==v1Anim)return;const t=Math.min(1,(now-ts)/dur),e=ease(t);
+    ['core','thread','plat','apex'].forEach(q=>v1[q]=lerp(a[q],b[q],e));drawV1();if(t<1)requestAnimationFrame(f);})(performance.now());
+}
+function updateV1Text(){
+  const I=IMPL[v1Sel];
+  $('bigD').textContent=lab(v1Sel);$('bigCat').textContent=I.code+(I.deep?' · Deep Thread (hueso blando)':' · Regular Thread')+' · largo real 9.5 mm';
+  $('sCore').textContent='Ø'+f1(I.core);$('sApex').textContent='Ø'+f1(I.apex);
+  $('sThread').textContent='Ø'+f1(I.thread);$('sDepth').textContent=mmTxt((I.thread-I.core)/2)+' mm';
+  $('qBlk').hidden=!!I.deep;$('deepNote').hidden=!I.deep;
+  $('sFinal').textContent=I.final?'Shaping Ø'+f1(I.final):'no publicada en la guía oficial';
+}
+function drawV1(){
+  const s=28,cx=250,top=58,len=LEN,I=v1,bot=top+len*s,anchor=top+1.1*s,ps=P*s,crest=top-SUB*s;
+  let g='<clipPath id="aorh"><rect x="'+cx+'" y="0" width="400" height="480"/></clipPath><clipPath id="aolh"><rect x="0" y="0" width="'+cx+'" height="480"/></clipPath>';
+  g+='<g clip-path="url(#aorh)">'+implantSVG('aov1',cx,top,s,I,len,anchor)+'</g>';
+  let sec='M'+cx+' '+top+' L'+n1(cx-I.plat/2*s)+' '+top+' ';for(let y=.05;y<=len-.05;y+=.08)sec+='L'+n1(cx-coreR(I,len,y)*s)+' '+n1(top+y*s)+' ';sec+='Q'+n1(cx-.3*s)+' '+n1(top+(len+.2)*s)+' '+cx+' '+n1(top+(len+.18)*s)+' Z';
+  let teeth='';
+  for(let yk=anchor-Math.ceil((anchor-top)/ps+2)*ps;yk<bot+ps;yk+=ps){const yL=yk-ps/4,ym=(yL-top)/s;if(ym<TH0||ym>len)continue;
+    const ro=outR(I,len,ym)*s,rc=coreR(I,len,ym)*s;if(ro-rc<1)continue;
+    teeth+='<path d="M'+n1(cx-rc+1)+' '+n1(yL-ps*.26)+' L'+n1(cx-ro+2)+' '+n1(yL-ps*.06)+' Q'+n1(cx-ro)+' '+n1(yL)+' '+n1(cx-ro+2)+' '+n1(yL+ps*.06)+' L'+n1(cx-rc+1)+' '+n1(yL+ps*.24)+' Z" fill="'+VIOLET+'"/>';}
+  g+='<g clip-path="url(#aolh)">'+teeth;
+  g+='<path d="'+sec+'" fill="#DDF0FA"/><path d="'+sec+'" fill="url(#sech)"/><path d="'+sec+'" fill="none" stroke="'+INK+'" stroke-width="1.2"/>';
+  g+='<rect x="'+n1(cx-1.3*s)+'" y="'+top+'" width="'+n1(1.3*s)+'" height="'+n1(1.9*s)+'" fill="#2a2f33"/>';
+  g+='<rect x="'+n1(cx-1.0*s)+'" y="'+n1(top+1.9*s)+'" width="'+n1(1.0*s)+'" height="'+n1(3.6*s)+'" fill="#2a2f33"/>';
+  for(let k=0;k<10;k++)g+='<line x1="'+n1(cx-1.0*s)+'" y1="'+n1(top+(2.2+k*.33)*s)+'" x2="'+n1(cx-.75*s)+'" y2="'+n1(top+(2.35+k*.33)*s)+'" stroke="#9CCFEA" stroke-width="1.3"/>';
+  g+='</g>';
+  const F=IMPL[v1Sel].final;
+  if(F){const d=F,a=DAPEX[F],Y=YL[F];
+  const fp=[[d/2,0],[d/2,3.5],[Math.max(a,.5)/2,10],[0,10+Y]];
+  let fd='M'+n1(cx-fp[0][0]*s)+' '+n1(crest)+' ';fp.forEach(([x,z])=>fd+='L'+n1(cx-x*s)+' '+n1(crest+z*s)+' ');for(let i=fp.length-2;i>=0;i--)fd+='L'+n1(cx+fp[i][0]*s)+' '+n1(crest+fp[i][1]*s)+' ';
+  g+='<path d="'+fd+'" fill="none" stroke="'+VIOLET+'" stroke-width="2.2" stroke-dasharray="7 5"/>';
+  const ft=crest+(10+Y)*s+26;
+  g+='<line x1="'+(cx+60)+'" y1="'+n1(crest+8*s)+'" x2="'+(cx+118)+'" y2="'+n1(crest+8*s)+'" stroke="'+VIOLET+'" stroke-width="2.2" stroke-dasharray="7 5"/>';
+  g+=tagSVG(cx+124,crest+8*s+6,'fresa final','#E8409A',26,'start');
+  g+=tagSVG(cx,ft+12,'Shaping Ø'+f1(F)+' · profundidad '+f2(10+Y)+' mm','#0B87C9',26,'middle');
+  } else { g+=tagSVG(cx,crest+11.2*s+30,'Deep Thread: secuencia no publicada en la guía oficial','#687481',24,'middle'); }
+  g+='<line x1="30" y1="'+n1(crest)+'" x2="410" y2="'+n1(crest)+'" stroke="#B9A57C" stroke-width="1.5" stroke-dasharray="3 4"/>';
+  g+='<text x="410" y="'+n1(crest-7)+'" text-anchor="end" font-family="'+MONO+'" font-size="11" fill="#6b5a3a">CRESTA · 0.5 mm SUBCRESTAL</text>';
+  g+='<text x="'+(cx+8)+'" y="'+(crest-24)+'" fill="#6B7176" font-size="13" font-family="'+SANS+'" font-weight="600">Vista real</text><text x="'+(cx-8)+'" y="'+(crest-24)+'" text-anchor="end" fill="#6B7176" font-size="13" font-family="'+SANS+'" font-weight="600">Corte</text>';
+  const ly1=top+6.2*s;let tY=anchor-Math.ceil((anchor-top)/ps+2)*ps;while(tY-ps/4<top+2.2*s)tY+=ps;const ly2=tY-ps/4;
+  g+='<path d="M'+n1(cx-coreR(I,len,6.2)*s*.5)+' '+n1(ly1)+' Q'+n1(cx-coreR(I,len,6.2)*s-40)+' '+n1(ly1+14)+' 104 '+n1(ly1)+'" stroke="'+INK+'" stroke-width="1.4" fill="none"/><circle cx="'+n1(cx-coreR(I,len,6.2)*s*.5)+'" cy="'+n1(ly1)+'" r="3.5" fill="'+INK+'"/>';
+  g+=tagSVG(100,ly1+8,'CORE',YELLOW,30,'end');
+  g+='<path d="M'+n1(cx-(outR(I,len,(ly2-top)/s)-.05)*s)+' '+n1(ly2)+' Q'+n1(cx-I.thread/2*s-30)+' '+n1(ly2-14)+' 118 '+n1(ly2)+'" stroke="'+INK+'" stroke-width="1.4" fill="none"/><circle cx="'+n1(cx-(outR(I,len,(ly2-top)/s)-.05)*s)+'" cy="'+n1(ly2)+'" r="3.5" fill="'+INK+'"/>';
+  g+=tagSVG(114,ly2+8,'ROSCA','#E8409A',30,'end');
+  $('svg1').innerHTML=g;fitTags($('svg1'));
+}
+
+/* ===== Vista 2 ===== */
+const S={s:18,cx:260,crest:170,W:520,H:480};
+const sel={diam:'4.0',dens:1};
+let steps=[],runId=0,st;
+function fresh(){st={holes:[],cur:null,drill:null,implant:null,parts:[],blood:0,idx:0,running:false,done:false};}
+fresh();
+$('goSeq').onclick=()=>{sel.diam=v1Sel;window.__sys&&0;rebuild();showTab(2);window.scrollTo({top:0});};
+
+function drawBone(){
+  const D=DENS[sel.dens],c=D.cort,s=S.s,cx=S.cx,top=S.crest,W=S.W,H=S.H,dn=sel.dens;
+  const I=IMPL[sel.diam],X=v=>n1(cx+v*s),Y=v=>n1(top+v*s);
+  const base=['#ECE2CB','#E8DCC2','#E4D5B8','#DFCFAF'][dn];
+  let g='<rect x="-40" y="-40" width="'+(W+80)+'" height="'+(H+80)+'" fill="url(#sceneBg)"/>';
+  // hueso: trabecular con poros y relieve
+  g+='<rect x="-40" y="'+top+'" width="'+(W+80)+'" height="'+(H-top+60)+'" fill="'+base+'"/>';
+  g+='<rect x="-40" y="'+n1(top+c*s)+'" width="'+(W+80)+'" height="'+(H-top+60)+'" filter="url(#poA'+dn+')"/>';
+  g+='<rect x="-40" y="'+n1(top+c*s)+'" width="'+(W+80)+'" height="'+(H-top+60)+'" filter="url(#poB'+dn+')"/>';
+  g+='<rect x="-40" y="'+top+'" width="'+(W+80)+'" height="'+(H-top+60)+'" filter="url(#relief)" opacity=".22" style="mix-blend-mode:multiply"/>';
+  // cortical de la cresta
+  g+='<path d="M-40 '+top+' H'+(W+40)+' V'+n1(top+c*s)+' Q'+n1(W*.75)+' '+n1(top+c*s+3)+' '+n1(W/2)+' '+n1(top+c*s)+' T-40 '+n1(top+c*s)+' Z" fill="url(#cortG)"/>';
+  g+='<rect x="-40" y="'+top+'" width="'+(W+80)+'" height="'+n1(c*s)+'" filter="url(#speck)" opacity=".35"/>';
+  // conducto mandibular
+  const cy=top+14.9*s,ch=2.2*s;
+  g+='<rect x="-40" y="'+n1(cy)+'" width="'+(W+80)+'" height="'+n1(ch)+'" rx="'+n1(ch/2)+'" fill="#F3DDCF" stroke="#F4ECDC" stroke-width="3"/>';
+  g+='<path d="M-40 '+n1(cy+ch*.35)+' C'+n1(W*.3)+' '+n1(cy+ch*.2)+' '+n1(W*.6)+' '+n1(cy+ch*.5)+' '+(W+40)+' '+n1(cy+ch*.35)+'" stroke="#C0392B" stroke-width="2.4" fill="none"/>';
+  g+='<path d="M-40 '+n1(cy+ch*.55)+' C'+n1(W*.3)+' '+n1(cy+ch*.7)+' '+n1(W*.6)+' '+n1(cy+ch*.45)+' '+(W+40)+' '+n1(cy+ch*.6)+'" stroke="#E7C04A" stroke-width="3" fill="none"/>';
+  g+='<path d="M-40 '+n1(cy+ch*.75)+' C'+n1(W*.3)+' '+n1(cy+ch*.85)+' '+n1(W*.6)+' '+n1(cy+ch*.65)+' '+(W+40)+' '+n1(cy+ch*.78)+'" stroke="#2F5DA8" stroke-width="2.2" fill="none"/>';
+  // dientes vecinos (raíz en hueso con ligamento, corona sobre la encía)
+  const tooth=(tx,sg)=>{const T=(x,y)=>n1(cx+(tx+x*sg)*s)+' '+n1(top+(y-1.6)*s);
+    const root='M'+T(-2.8,0)+' C'+T(-2.9,4)+' '+T(-2.2,9)+' '+T(-.8,14.1)+' Q'+T(0,14.6)+' '+T(.8,14.1)+' C'+T(2.2,9)+' '+T(2.9,4)+' '+T(2.8,0)+' Z';
+    const crown='M'+T(-2.8,.25)+' C'+T(-3.6,-1)+' '+T(-3.9,-3.2)+' '+T(-3.7,-5.2)+' C'+T(-3.6,-6.4)+' '+T(-2.8,-7.2)+' '+T(-1.8,-7)+' Q'+T(-.9,-6.4)+' '+T(0,-6.8)+' Q'+T(.9,-7.3)+' '+T(1.8,-7)+' C'+T(2.8,-7.2)+' '+T(3.6,-6.4)+' '+T(3.7,-5.2)+' C'+T(3.9,-3.2)+' '+T(3.6,-1)+' '+T(2.8,.25)+' Z';
+    return {r:'<path d="'+root+'" fill="none" stroke="#F6F0E2" stroke-width="7"/><path d="'+root+'" fill="none" stroke="#C4473F" stroke-width="3.2"/><path d="'+root+'" fill="url(#rootG)"/>',
+      c:'<path d="'+crown+'" fill="url(#enamel)"/><path d="'+crown+'" fill="url(#enamelV)"/><ellipse cx="'+n1(cx+(tx-.9*sg)*s)+'" cy="'+n1(top-5.6*s)+'" rx="'+n1(.7*s)+'" ry="'+n1(1.9*s)+'" fill="#fff" opacity=".7" filter="url(#soft)"/>'};};
+  const tL=tooth(-10.2,1),tR=tooth(10.2,-1);
+  g+=tL.r+tR.r+tL.c+tR.c;
+  // encía con colgajo abierto en el sitio del implante
+  const win=Math.max(I.thread,I.plat)/2+1.7;
+  const gum=sg=>{const P=(x,y)=>n1(cx+sg*x*s)+' '+n1(top+y*s);
+    return 'M'+P(16,.25)+' L'+P(16,-1.9)+' C'+P(13,-1.65)+' '+P(11.4,-1.65)+' '+P(9.4,-1.95)+' C'+P(8,-2.3)+' '+P(7.3,-3.1)+' '+P(6.5,-2.95)+' C'+P(5.9,-2.75)+' '+P(win+1.2,-2.25)+' '+P(win+.5,-2.1)+' Q'+P(win-.05,-2.0)+' '+P(win-.08,-1.1)+' Q'+P(win-.12,.05)+' '+P(win-.4,.25)+' Z';};
+  [1,-1].forEach(sg=>{const d=gum(sg);g+='<path d="'+d+'" fill="url(#gumG)"/><path d="'+d+'" fill="url(#gumGloss)"/><path d="'+d+'" filter="url(#gumTex2)" opacity=".22"/><path d="'+d+'" fill="none" stroke="#fff" stroke-opacity=".45" stroke-width="2.5" filter="url(#soft)"/><path d="'+d+'" fill="none" stroke="#9c2f40" stroke-opacity=".35" stroke-width="1"/>';});
+  g+='<text x="10" y="'+(H-12)+'" font-family="'+SANS+'" font-weight="700" font-size="13" fill="'+INK+'" style="paint-order:stroke" stroke="#F4ECDC" stroke-width="3">'+DN[sel.dens]+'  '+D.t.toLowerCase()+'</text>';
+  $('bone').innerHTML=g;
+}
+function driverSVG(top,phase){
+  const s=S.s,cx=S.cx,w=2.4*s,hx=2.0*s;
+  let g='<rect x="'+n1(cx-w/2)+'" y="-20" width="'+n1(w)+'" height="'+n1(top-1.1*s+20)+'" fill="url(#steel)"/>';
+  g+='<path d="M'+n1(cx-w/2)+' '+n1(top-1.1*s)+' L'+n1(cx+w/2)+' '+n1(top-1.1*s)+' L'+n1(cx+hx/2)+' '+n1(top-.5*s)+' L'+n1(cx+hx/2)+' '+n1(top+.3*s)+' L'+n1(cx-hx/2)+' '+n1(top+.3*s)+' L'+n1(cx-hx/2)+' '+n1(top-.5*s)+' Z" fill="url(#steel)" stroke="#8a8f93" stroke-width=".6"/>';
+  for(let k=0;k<3;k++){const a=phase+k*2.094,x=Math.sin(a)*w/2*.92;if(Math.cos(a)>0)g+='<line x1="'+n1(cx+x)+'" y1="-20" x2="'+n1(cx+x)+'" y2="'+n1(top-1.2*s)+'" stroke="#7b8085" stroke-width="1.4" opacity="'+n1(.3+Math.cos(a)*.5)+'"/>';}
+  return g;
+}
+function drillSVG(d){
+  const s=S.s,cx=S.cx,tipY=S.crest+d.tip*s,prof=d.prof,k=d.kind;
+  const cut=k==='dense'?3.2:k==='init'?11:15.5, sh=1.175;
+  const Rp=[],Lp=[];for(let u=0;u<=cut+1e-6;u+=.12){const r=prof(u)*s;Rp.push([cx+r,tipY-u*s]);Lp.push([cx-r,tipY-u*s]);}
+  const bodyP='M'+Rp.map(p=>n1(p[0])+' '+n1(p[1])).join(' L')+' L'+Lp.reverse().map(p=>n1(p[0])+' '+n1(p[1])).join(' L')+' Z';
+  const topY=tipY-cut*s, rTop=prof(cut)*s;
+  const metal=(k==='shape'||k==='dense')?'url(#goldG)':'url(#steel)';
+  let g='<rect x="'+n1(cx-sh*s)+'" y="-20" width="'+n1(sh*2*s)+'" height="'+n1(Math.max(0,topY-1*s+20))+'" fill="'+metal+'"/>';
+  g+='<path d="M'+n1(cx-sh*s)+' '+n1(topY-1*s)+' L'+n1(cx+sh*s)+' '+n1(topY-1*s)+' L'+n1(cx+rTop)+' '+n1(topY)+' L'+n1(cx-rTop)+' '+n1(topY)+' Z" fill="'+metal+'"/>';
+  const fill=k==='twist'?'url(#aoflK)':k==='init'?'url(#steel)':'url(#fl)';
+  g+='<path d="'+bodyP+'" fill="'+fill+'"/><path d="'+bodyP+'" fill="url(#shade)" opacity=".65"/>';
+  const Y=k==='twist'?YL[2.8]:k==='shape'?YL[d.d]:0;
+  if(k==='twist'||k==='shape'){[7,8.5,10,11.5,13,15].forEach(m=>{const u=Y+m;if(u>cut)return;const y=tipY-u*s,r=prof(u)*s;
+    g+='<rect x="'+n1(cx-r)+'" y="'+n1(y-(m===10?1.6:.8))+'" width="'+n1(r*2)+'" height="'+(m===10?3.2:1.6)+'" fill="'+(k==='twist'?'#e9eef3':'#1a1206')+'" opacity=".9"/>';});}
+  if(k==='dense'){DENSE_DEPTH.forEach(m=>{const y=tipY-m*s,r=prof(m)*s;g+='<rect x="'+n1(cx-r)+'" y="'+n1(y-1.2)+'" width="'+n1(r*2)+'" height="2.4" fill="#1a1206"/>';});}
+  if(d.load>0&&d.deb){const cols=[['#F4ECDA','#D9C9A3'],['#EBDCC2','#C98770'],['#B6392E','#E2CFB0'],['#9A1A15','#7c1812']][sel.dens];
+    const n=Math.floor(d.load*d.deb.length),span=Math.min(cut-.5,Math.max(1.5,d.tip>0?d.tip:6))*s;
+    g+='<clipPath id="aodcl"><path d="'+bodyP+'"/></clipPath><g clip-path="url(#aodcl)">';
+    for(let i=0;i<n;i++){const q=d.deb[i];const u=q.v*span/s;g+='<circle cx="'+n1(cx+q.u*prof(u)*s*.85)+'" cy="'+n1(tipY-q.v*span)+'" r="'+n1(q.r)+'" fill="'+cols[i%2]+'" opacity=".9"/>';}
+    g+='</g>';}
+  return g;
+}
+function holesAll(){const a=st.holes.map(h=>holeD(h.prof,h.t));if(st.cur&&st.cur.t>0)a.push(holeD(st.cur.prof,st.cur.t));return a.join(' ');}
+function maxDepth(){let m=0;st.holes.forEach(h=>m=Math.max(m,h.t));return m;}
+function finalProf(){let f=null;st.holes.forEach(h=>{if(h.kind==='shape')f=h;});return f;}
+function render(){
+  const s=S.s,cx=S.cx,I=IMPL[sel.diam],D=DENS[sel.dens];let g='';
+  const hd=holesAll(),md=Math.max(maxDepth(),st.cur?st.cur.t:0),b=S.crest+md*s;
+  if(hd){
+    const bx=cx-4.6*s,bw=9.2*s,by=S.crest-2,bh=11.5*s;
+    g+='<clipPath id="aohc"><path d="'+hd+'"/></clipPath><g clip-path="url(#aohc)">';
+    g+='<rect x="'+n1(bx)+'" y="'+by+'" width="'+n1(bw)+'" height="'+n1(bh)+'" fill="'+D.trab+'"/>';
+    g+='<rect x="'+n1(bx)+'" y="'+by+'" width="'+n1(bw)+'" height="'+n1(bh)+'" filter="url(#pD'+sel.dens+')"/>';
+    g+='<rect x="'+n1(bx)+'" y="'+by+'" width="'+n1(bw)+'" height="'+n1(bh)+'" fill="url(#hole'+sel.dens+')" opacity=".93"/>';
+    g+='<rect x="'+n1(bx)+'" y="'+by+'" width="'+n1(bw)+'" height="'+n1(bh)+'" fill="url(#holeTop)"/>';
+    if(st.blood>.05&&!st.implant){const yT=b-st.blood*s;
+      g+='<rect x="'+n1(bx)+'" y="'+n1(yT)+'" width="'+n1(bw)+'" height="'+n1(b-yT+4)+'" fill="url(#blood)" opacity=".92"/>';
+      g+='<rect x="'+n1(bx)+'" y="'+n1(yT)+'" width="'+n1(bw)+'" height="2" fill="#e0564c" opacity=".7"/>';}
+    g+='</g><path d="'+hd+'" fill="none" stroke="#2a0d08" stroke-opacity=".35" stroke-width="1"/>';
+  }
+  // cota: marca de 10 mm y dimensión Y
+  const dx=cx+(I.thread/2+1.8)*s,b10=S.crest+10*s;
+  g+='<line x1="'+n1(dx)+'" y1="'+S.crest+'" x2="'+n1(dx)+'" y2="'+b10+'" stroke="'+INK+'" stroke-width="1.2" opacity=".7"/>'+
+     '<path d="M'+n1(dx-5)+' '+S.crest+' h10 M'+n1(dx-5)+' '+b10+' h10" stroke="'+INK+'" stroke-width="1.2" opacity=".7"/>'+
+     '<text x="'+n1(dx+8)+'" y="'+n1(S.crest+5*s+5)+'" font-family="'+MONO+'" font-weight="600" font-size="13" fill="'+INK+'">10 mm</text>';
+  const fp=finalProf();
+  if(fp&&(st.done||!st.drill)){const Y=YL[fp.d];
+    g+='<line x1="'+n1(dx)+'" y1="'+b10+'" x2="'+n1(dx)+'" y2="'+n1(b10+Y*s)+'" stroke="'+VIOLET+'" stroke-width="2"/><path d="M'+n1(dx-5)+' '+n1(b10+Y*s)+' h10" stroke="'+VIOLET+'" stroke-width="2"/>'+
+       '<text x="'+n1(dx+8)+'" y="'+n1(b10+Y*s+4)+'" font-family="'+MONO+'" font-weight="600" font-size="12" fill="'+VIOLET+'">+Y '+f2(Y)+'</text>';}
+  if(st.implant){
+    const bottom=S.crest+st.implant.bottom*s,top=bottom-LEN*s;
+    if(fp){ // halo de hueso condensado siguiendo la conicidad
+      const Lp=[],Rp=[],Li=[],Ri=[];
+      for(let z=0;z<=10;z+=.2){const y=S.crest+z*s;if(y>bottom-.6*s)break;const ym=(y-top)/s;if(ym<0)continue;
+        const rh=fp.prof(Math.max(0,fp.t-z)),ro=outR(I,LEN,ym),ext=Math.max(ro-rh,0)+.6;
+        Rp.push([cx+(rh+ext)*s,y]);Ri.push([cx+rh*s,y]);Lp.push([cx-(rh+ext)*s,y]);Li.push([cx-rh*s,y]);}
+      if(Rp.length>1){const poly=(A,B)=>'M'+A.map(p=>n1(p[0])+' '+n1(p[1])).join(' L')+' L'+B.slice().reverse().map(p=>n1(p[0])+' '+n1(p[1])).join(' L')+' Z';
+        g+='<g filter="url(#soft)"><path d="'+poly(Rp,Ri)+'" fill="#E8409A" opacity=".32"/><path d="'+poly(Lp,Li)+'" fill="#E8409A" opacity=".32"/></g>';}
+    }
+    g+=implantSVG('aov2',cx,top,s,I,LEN,S.crest+SUB*s+1.1*s);
+    if(!st.done) g+=driverSVG(top,st.implant.bottom/P*6.283);
+    if(st.done){const tx=cx-Math.max(I.thread,I.plat)*s/2-10;
+      g+='<path d="M'+n1(tx)+' '+S.crest+' h-14 M'+n1(tx)+' '+n1(top)+' h-14 M'+n1(tx-7)+' '+S.crest+' V'+n1(top)+'" stroke="'+VIOLET+'" stroke-width="2"/>';
+      g+=tagSVG(tx-18,top+7,'0.5 mm subcrestal','#E8409A',21,'end');}
+  }
+  if(st.drill){const d=st.drill;
+    if(d.tip>-3){const r=d.prof(Math.max(0,d.tip))*s,ex=cx-r-3,ey=S.crest-6;
+      g+='<path d="M'+n1(ex-16)+' '+n1(S.crest-120)+' Q'+n1(ex-10)+' '+n1(S.crest-50)+' '+n1(ex)+' '+n1(ey)+'" stroke="#8FD0F2" stroke-width="2.6" fill="none" opacity=".75" stroke-linecap="round" stroke-dasharray="9 6" stroke-dashoffset="'+n1(-fluteOff*4)+'"/>';
+      g+='<ellipse cx="'+n1(cx)+'" cy="'+n1(S.crest-1)+'" rx="'+n1(r+1.2*s)+'" ry="3" fill="#BFE6FA" opacity=".55"/>';}
+    g+=drillSVG(d);}
+  st.parts.forEach(p=>g+='<circle cx="'+n1(p.x)+'" cy="'+n1(p.y)+'" r="'+p.r+'" fill="'+p.c+'" opacity="'+n1(Math.max(0,p.life)*(p.a||1))+'"/>');
+  $('dyn').innerHTML=g;if(st.done)fitTags($('svg2'));
+}
+let fluteOff=0;
+function stepParticles(){
+  const d=st.drill,cols=[['#F4ECDA','#D9C9A3'],['#EBDCC2','#C98770'],['#B6392E','#E2CFB0'],['#9A1A15','#7c1812']][sel.dens];
+  if(d&&d.tip>0&&d.moving){const r=d.prof(Math.min(d.tip,3));
+    for(let i=0;i<3;i++){const sg=Math.random()<.5?-1:1;
+      st.parts.push({x:S.cx+sg*r*S.s,y:S.crest-1,vx:sg*(.6+Math.random()*2.4),vy:-(1+Math.random()*2.6),r:(1+Math.random()*1.6).toFixed(1),c:cols[Math.random()<.6?0:1],life:1});}
+    if(Math.random()<.7){const sg=Math.random()<.5?-1:1;st.parts.push({x:S.cx+sg*(r+.3)*S.s,y:S.crest-3,vx:sg*(1.5+Math.random()*2.5),vy:-(.5+Math.random()*2),r:(1.2+Math.random()*1.4).toFixed(1),c:'#9ED6F5',life:1,a:.8});}
+    d.load=Math.min(1,(d.load||0)+.012);}
+  if(st.implant&&st.implant.moving&&Math.random()<.5){const I=IMPL[sel.diam],sg=Math.random()<.5?-1:1;
+    st.parts.push({x:S.cx+sg*I.thread*S.s/2,y:S.crest-1,vx:sg*(.3+Math.random()*1.2),vy:-(.5+Math.random()*1.2),r:(.8+Math.random()*1.1).toFixed(1),c:cols[0],life:.8});}
+  st.parts.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=.18;p.life-=.028;});
+  st.parts=st.parts.filter(p=>p.life>0&&p.y<S.crest+4);
+  if(st.parts.length>200)st.parts.splice(0,st.parts.length-200);
+}
+function tween(ms,fn){
+  const my=runId,dur=REDUCED?Math.min(ms,60):ms;
+  return new Promise((res,rej)=>{const t0=performance.now();
+    (function f(now){if(my!==runId)return rej('cancel');const t=Math.min(1,(now-t0)/dur);fn(t);
+      if(!REDUCED){if(st.drill){fluteOff=(fluteOff+2.2)%14;document.getElementById('fl').setAttribute('patternTransform','translate(0,'+fluteOff.toFixed(1)+')');document.getElementById('aoflK').setAttribute('patternTransform','translate(0,'+fluteOff.toFixed(1)+')');}stepParticles();}
+      render();if(t<1)requestAnimationFrame(f);else res();})(performance.now());});
+}
+const BLOOD=[0,.9,3.2,5.5];
+async function doDrill(step){
+  const prof=drillProf(step),depth=fullDepth(step);
+  st.drill={kind:step.kind,d:step.d,prof,tip:-5,moving:false,load:0,deb:Array.from({length:44},()=>({u:Math.random()*2-1,v:Math.random(),r:.8+Math.random()*1.4}))};
+  const b0=st.blood;
+  await tween(380,t=>{st.drill.tip=lerp(-5,0,ease(t));st.blood=b0*(1-t);});
+  let reach=0;
+  const seg=async(ms,a,z)=>tween(ms,t=>{const tip=lerp(a,z,ease(t));st.drill.tip=tip;st.drill.moving=tip>=reach-.05;reach=Math.max(reach,tip);st.cur={prof,t:reach};});
+  if(step.kind==='dense') await seg(700,0,depth);
+  else if(step.kind==='init') await seg(900,0,depth);
+  else {await seg(750,0,depth*.6);await seg(260,depth*.6,depth*.38);await seg(820,depth*.38,depth);}
+  st.drill.moving=false;
+  st.holes.push({prof,t:depth,kind:step.kind,d:step.d});st.cur=null;
+  const bt=step.kind==='dense'?st.blood:BLOOD[sel.dens]*(step.kind==='init'?.3:1);
+  await tween(560,t=>{st.drill.tip=lerp(depth,-5.5,ease(t));if(st.drill.tip<depth-1)st.blood=bt*ease(t);});
+  st.drill=null;
+  await tween(250,()=>{});
+}
+async function doImplant(){
+  st.implant={bottom:-1,moving:true};
+  await tween(500,t=>{st.implant.bottom=lerp(-1,.6,ease(t));});
+  await tween(3000,t=>{st.implant.bottom=lerp(.6,10,1-Math.pow(1-t,2.2));});
+  st.implant.moving=false;
+}
+function buildSteps(){
+  const I=IMPL[sel.diam];if(I.deep){steps=[];return;}steps=[{kind:'init'},{kind:'twist',d:2.8}];
+  for(const d of SHAPING){steps.push({kind:'shape',d});if(d===I.final)break;}
+  if(sel.dens<2)steps.push({kind:'dense',d:+sel.diam,depth:DENSE_DEPTH[sel.dens]});
+  steps.push({kind:'implant'});
+}
+function stepName(x){return x.kind==='implant'?'Implante':x.kind==='init'?'Initial':x.kind==='twist'?'Ø2.8':x.kind==='dense'?'Dense Ø'+f1(x.d):'Ø'+f1(x.d);}
+function stepTitle(x){return x.kind==='implant'?'Inserción del implante':x.kind==='init'?'Initial Drill':x.kind==='twist'?'Fresa Ø2.8':x.kind==='dense'?'Dense Drill Ø'+f1(x.d):'Shaping Drill Ø'+f1(x.d);}
+function stepSub(x){return x.kind==='implant'?'La Knife Thread condensa el hueso; queda 0.5 mm subcrestal':x.kind==='init'?'Marca el punto de entrada':x.kind==='twist'?'Hasta la marca de 10 mm':
+  x.kind==='dense'?(sel.dens===0?'Conforma la cortical: hasta la 2ª línea (D1)':'Conforma la cortical: hasta la 1ª línea (D2)'):'Fresa cónica hasta la marca de 10 mm (+Y '+f2(YL[x.d])+')';}
+function renderSide(){
+  chipRow($('c2'),REG,sel.diam,k=>{sel.diam=k;rebuild();});chipRow($('c2d'),DEEP,sel.diam,k=>{sel.diam=k;rebuild();});
+  const dens=$('dens');dens.innerHTML='';
+  DN.forEach((n,i)=>{const b=document.createElement('button');b.className='dchip';b.setAttribute('aria-pressed',i===sel.dens);
+    b.innerHTML='<svg viewBox="0 0 80 36" preserveAspectRatio="none"><rect width="80" height="36" fill="'+DENS[i].trab+'"/><rect width="80" height="36" filter="url(#pD'+i+')"/></svg><b>'+n+'</b><span>'+DENS[i].t+'</span>';
+    b.onclick=()=>{sel.dens=i;rebuild();};dens.appendChild(b);});
+  const I=IMPL[sel.diam],useD=sel.dens<2;
+  if(I.deep){$('fit').innerHTML='<span class="badge no">!</span><div>Secuencia no publicada<small>La guía oficial de fresado AnyOne solo incluye Regular Thread (IF…C). El protocolo de Deep Thread ('+I.code+') hay que pedirlo a MegaGen; aquí no se inventa.</small></div>';updateUI();return;}
+  $('fit').innerHTML=(useD?'<span class="badge mid">+</span>':'<span class="badge ok">✓</span>')+'<div>'+(useD?'Agrega Dense Drill Ø'+sel.diam+' ('+(sel.dens===0?'2ª línea':'1ª línea')+')':'Sin Dense Drill')+
+    '<small>Shaping Drills iguales en cualquier densidad: fresa final Ø'+f1(I.final)+', profundidad total '+f2(10+YL[I.final])+' mm. Código '+I.code+'.</small></div>';
+  updateUI();
+}
+function updateUI(){
+  const seq=$('seq');seq.innerHTML='';
+  steps.forEach((x,k)=>{const e=document.createElement('span');e.className='st';
+    if(x.kind==='implant')e.classList.add('imp');if(x.kind==='dense')e.classList.add('opt');
+    if(k<st.idx)e.classList.add('done');else if(k===st.idx&&st.running)e.classList.add('now');
+    e.textContent=stepName(x);seq.appendChild(e);});
+  $('play').disabled=st.running||!steps.length;$('next').disabled=st.running||st.done||!steps.length;
+  $('play').querySelector('span').textContent=st.done?'Repetir':'Reproducir';
+  const I=IMPL[sel.diam];let h='';
+  if(!steps.length)h='<span class="k">'+I.code+' · Deep Thread</span><br><span class="big no">Secuencia no publicada</span><small>No está en la guía oficial de fresado AnyOne</small>';
+  else if(st.done)h='<span class="k">'+I.code+' · largo de catálogo 10 mm, largo real 9.5 mm</span><br><span class="big mark v">'+lab(sel.diam)+' colocado</span>';
+  else if(st.idx<steps.length){const x=steps[st.idx];
+    h='<span class="k">Paso '+(st.idx+1)+' de '+steps.length+'</span><br><span class="big mark'+(x.kind==='implant'?' v':'')+'">'+stepTitle(x)+'</span><small>'+stepSub(x)+'</small>';}
+  $('hud').innerHTML=h;
+  const sm=$('summary');
+  if(st.done){const Y=YL[I.final],bite=(I.thread-I.final)/2;
+    sm.innerHTML='<strong>Osteotomía cónica Ø'+f1(I.final)+'</strong> con profundidad total '+f2(10+Y)+' mm (0.5 subcrestal + '+f2(Y)+' punta + 9.5 implante). La rosca Ø'+f1(I.thread)+' condensa ≈'+mmTxt(bite)+' mm de hueso por lado en el cuello.'+(sel.dens<2?' La Dense Drill abrió la cortical para controlar el torque en hueso denso.':'');
+    sm.hidden=false;}else sm.hidden=true;
+}
+function reset(){runId++;fresh();render();updateUI();}
+function rebuild(){runId++;fresh();buildSteps();drawBone();render();renderSide();}
+async function runStep(x){if(x.kind==='implant')await doImplant();else await doDrill(x);}
+async function play(){
+  if(st.running||!steps.length)return;if(st.done)reset();
+  st.running=true;updateUI();
+  try{while(st.idx<steps.length){await runStep(steps[st.idx]);st.idx++;updateUI();await tween(300,()=>{});}st.done=true;}catch(e){return;}
+  st.running=false;updateUI();render();
+}
+async function next(){
+  if(st.running||st.done||!steps.length)return;
+  st.running=true;updateUI();
+  try{await runStep(steps[st.idx]);st.idx++;if(st.idx>=steps.length)st.done=true;await tween(300,()=>{});}catch(e){return;}
+  st.running=false;updateUI();render();
+}
+$('play').onclick=play;$('next').onclick=next;$('reset').onclick=reset;
+chipRow($('c1'),REG,v1Sel,pickV1);chipRow($('c1d'),DEEP,v1Sel,pickV1);updateV1Text();drawV1();rebuild();
+window.__redraw=window.__redraw||{};window.__redraw[typeof lab==='function'?'AO':'AR']=()=>{drawV1();render();};
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{drawV1();drawBone();render();});
+})();
+</script>
+</body>
+</html>
